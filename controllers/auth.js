@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import mailTransport from "../utils/mailTransport.js";
 import asyncHandler from "express-async-handler";
+import { fileURLToPath } from "url";
+import path, { dirname } from "path";
 
 export class AuthController {
   async register(req, res) {
@@ -48,6 +50,17 @@ export class AuthController {
         const salt = bcrypt.genSaltSync(10);
         const hash = bcrypt.hashSync(password, salt);
 
+        if (req.files) {
+          let fileName = Date.now().toString() + req.files.image.name;
+          const __dirname = dirname(fileURLToPath(import.meta.url));
+          req.files.image.mv(path.join(__dirname, "..", "uploads", fileName));
+        }
+
+        if (fileName.length < 1) {
+          fileName =
+            "https://st4.depositphotos.com/9998432/20073/v/950/depositphotos_200738788-stock-illustration-default-placeholder-businesswoman-half-length.jpg?forcejpeg=true";
+        }
+
         const newUser = new User({
           full_name,
           role,
@@ -55,6 +68,7 @@ export class AuthController {
           username,
           password: hash,
           email,
+          avatar: fileName,
         });
 
         const v_token = jwt.sign(

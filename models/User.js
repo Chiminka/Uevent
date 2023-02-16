@@ -5,6 +5,11 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  avatar: {
+    type: String,
+    default:
+      "https://st4.depositphotos.com/9998432/20073/v/950/depositphotos_200738788-stock-illustration-default-placeholder-businesswoman-half-length.jpg?forcejpeg=true",
+  },
   my_promo_codes: [
     {
       type: String,

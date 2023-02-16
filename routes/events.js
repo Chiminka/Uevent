@@ -35,4 +35,15 @@ router.post("/after-the-payment", eventController.after_buying_action);
 // http://localhost:3002/api/events/create-checkout-session
 router.post("/create-checkout-session", eventController.payment);
 
+// Get Event Comments +
+// http://localhost:3002/api/events/:id/comments
+router.get("/:id/comments", eventController.getEventComments);
+
+// Create Event Comment +
+// http://localhost:3002/api/events/:id/comments
+router.post("/:id/comments", eventController.createComment);
+
+//Show all company's events, limit in 5
+
+//Show similar events to chosen event by category
 export default router;

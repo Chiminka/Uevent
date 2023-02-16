@@ -1,8 +1,11 @@
 import Event from "../models/Event.js";
 import User from "../models/User.js";
+import Comment from "../models/Comment.js";
 import promo from "../utils/create_promo.js";
 import mailTransport from "../utils/mailTransport.js";
 import Stripe from "stripe";
+import { fileURLToPath } from "url";
+import path, { dirname } from "path";
 
 const stripe = Stripe(process.env.STRIPE_KEY);
 
@@ -18,7 +21,11 @@ export class EventController {
   async getAllEvents(req, res) {
     try {
       const event = await Event.find({ visible: "yes" }).sort("-date_event");
-      res.json(event);
+      let arr_event = [];
+      for (let i = 0; i < event.length; i++) {
+        if (event[i].tickets > 0) arr_event.push(event[i]);
+      }
+      res.json(arr_event);
     } catch (error) {
       res.json({ message: "Getting event error" });
     }
@@ -30,7 +37,6 @@ export class EventController {
       if (user.role !== "company") {
         res.json({ message: "Access denied" });
         return;
-        // console.log("access denied");
       }
 
       let {
@@ -39,11 +45,10 @@ export class EventController {
         description,
         date_event,
         date_post,
-        category,
+        format,
         tickets,
         price,
         location,
-        img,
         members_visibles,
       } = req.body;
 
@@ -51,13 +56,23 @@ export class EventController {
         !title ||
         !description ||
         !date_event ||
-        !category ||
+        !format ||
         !tickets ||
         !location ||
         !price
       )
         return res.json({ message: "Content can not be empty" });
 
+      if (req.files) {
+        let fileName = Date.now().toString() + req.files.image.name;
+        const __dirname = dirname(fileURLToPath(import.meta.url));
+        req.files.image.mv(path.join(__dirname, "..", "uploads", fileName));
+      }
+
+      if (fileName.length < 1) {
+        fileName =
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQw-ByquDvpBITEAHnGNeqUyQGw7KX3gqz3A5vQyICAV67mzUB2G8HECVilUr521eXJx04&usqp=CAU";
+      }
       if (date_event) {
         const date_e = new Date(`${date_event}T00:00:00`);
         date_event = !date_event.includes("T")
@@ -80,10 +95,10 @@ export class EventController {
         description,
         date_event,
         date_post,
-        category,
+        format,
         tickets,
         location,
-        img,
+        img: fileName,
         members_visibles,
         promo_code: promo(),
         author: req.user.id,
@@ -141,10 +156,9 @@ export class EventController {
         date_event,
         date_post,
         price,
-        category,
+        format,
         tickets,
         location,
-        img,
         members_visibles,
       } = req.body;
 
@@ -152,6 +166,16 @@ export class EventController {
       const user = await User.findById(req.user.id);
 
       if (req.user._id.equals(event.author) && user.role === "company") {
+        if (req.files) {
+          let fileName = Date.now().toString() + req.files.image.name;
+          const __dirname = dirname(fileURLToPath(import.meta.url));
+          req.files.image.mv(path.join(__dirname, "..", "uploads", fileName));
+        }
+
+        if (fileName.length < 1) {
+          fileName = event.img;
+        }
+
         if (date_event) {
           const date_e = new Date(`${date_event}T00:00:00`);
           date_event = !date_event.includes("T")
@@ -178,10 +202,10 @@ export class EventController {
         if (description) event.description = description;
         if (date_post) event.date_post = date_post;
         if (date_event) event.date_event = date_event;
-        if (category) event.category = category;
+        if (format) event.format = format;
         if (tickets) event.tickets = tickets;
         if (location) event.location = location;
-        if (img) event.img = img;
+        if (fileName) event.img = fileName;
         if (price) event.price = price;
         if (members_visibles) event.members_visibles = members_visibles;
         await event.save();
@@ -260,7 +284,7 @@ export class EventController {
       const hour = event.date_event.getHours();
       const minutes = event.date_event.getMinutes();
       const date = `${day}.${month}.${year} ${hour}:${minutes}`;
-      // после оплаты отправляются билеты по почте и добавляется юзер в мемберы ивента, юзеру зачисляется какой-то промокод со скидкой
+      // после оплаты отправляются билеты по почте и добавляется юзер в мемберы ивента, юзеру зачисляется какой-то промокод со скидкой, -1 билет в счетчике билетов ивента
       mailTransport().sendMail({
         from: process.env.USER,
         to: user.email,
@@ -271,6 +295,7 @@ export class EventController {
         <h1>Was paid: ${event.price}</h1>`,
       });
       event.members = user._id;
+      event.tickets = event.tickets - 1;
 
       // Определяем массив
       const events = await Event.find();
@@ -289,6 +314,32 @@ export class EventController {
     } catch (error) {
       console.log(error);
       res.json({ message: "Sending tickets error" });
+    }
+  }
+  async createComment(req, res) {
+    try {
+      const { comment } = req.body;
+      if (!comment) return res.json({ message: "Comment can not be empty" });
+      const newComment = new Comment({
+        comment,
+        author: req.user.id,
+        event: req.params.id,
+      });
+      await newComment.save();
+      res.json(newComment);
+    } catch (error) {
+      console.log(error);
+      res.json({ message: "Something gone wrong" });
+    }
+  }
+  async getEventComments(req, res) {
+    try {
+      const event = await Event.findById(req.params.id);
+      const eventId = event.id;
+      const arr = await Comment.find({ event: { _id: eventId } });
+      res.json(arr);
+    } catch (error) {
+      res.json({ message: "Something gone wrong" });
     }
   }
 }

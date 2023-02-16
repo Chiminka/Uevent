@@ -3,6 +3,8 @@ import Event from "../models/Event.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import mailTransport from "../utils/mailTransport.js";
+import { fileURLToPath } from "url";
+import path, { dirname } from "path";
 
 export class UserController {
   async getMyEvents(req, res) {
@@ -64,6 +66,16 @@ export class UserController {
       const user = await User.findById(req.params.id);
 
       if (req.user._id.equals(user._id)) {
+        if (req.files) {
+          let fileName = Date.now().toString() + req.files.image.name;
+          const __dirname = dirname(fileURLToPath(import.meta.url));
+          req.files.image.mv(path.join(__dirname, "..", "uploads", fileName));
+        }
+
+        if (fileName.length < 1) {
+          fileName = user.avatar;
+        }
+        user.avatar = fileName;
         user.full_name = full_name;
         if (username) {
           user.username = username;

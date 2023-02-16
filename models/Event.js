@@ -30,7 +30,7 @@ const EventSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  category: {
+  format: {
     type: String,
     required: true,
   },
@@ -46,7 +46,8 @@ const EventSchema = new mongoose.Schema({
   ],
   img: {
     type: String,
-    default: "",
+    default:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQw-ByquDvpBITEAHnGNeqUyQGw7KX3gqz3A5vQyICAV67mzUB2G8HECVilUr521eXJx04&usqp=CAU",
   },
   notifications: {
     type: String,
@@ -66,3 +67,8 @@ const EventSchema = new mongoose.Schema({
   },
 });
 export default mongoose.model("Event", EventSchema);
+
+//members_visibles: everyone || only_members
+//notifications - надо ли уведомлять о добавленных мемберах
+//visible - ??
+// стоит отделить формат и тематику в отдельную модель
