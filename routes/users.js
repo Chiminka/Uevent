@@ -23,8 +23,4 @@ router.delete("/:id", userController.deleteUser);
 // http://localhost:3002/api/users/:id
 router.patch("/:id", userController.updateUser);
 
-// Get a promo code -
-// http://localhost:3002/api/users/promo
-router.patch("/promo", userController.getPromoCode);
-
 export default router;

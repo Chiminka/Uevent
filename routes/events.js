@@ -27,11 +27,11 @@ router.delete("/:id", eventController.deleteEvent);
 // http://localhost:3002/api/events/:id
 router.patch("/:id", eventController.updateEvent);
 
-// Send tickets on the mail, add to members after buying +
+// Send tickets on the mail, add to members after buying and get promo code +
 // http://localhost:3002/api/events/after-the-payment
 router.post("/after-the-payment", eventController.after_buying_action);
 
-// Payment +
+// Payment ?
 // http://localhost:3002/api/events/create-checkout-session
 router.post("/create-checkout-session", eventController.payment);
 

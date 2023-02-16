@@ -119,12 +119,4 @@ export class UserController {
       res.json({ message: "Updating user error" });
     }
   }
-  async getPromoCode(req, res) {
-    try {
-      // получить промокод рандомного ивента
-    } catch (error) {
-      console.log(error);
-      res.json({ message: "Getting promo code error" });
-    }
-  }
 }

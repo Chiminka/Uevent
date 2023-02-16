@@ -199,39 +199,43 @@ export class EventController {
       // тут нужно проверять промо код, если есть, то давать скидку на 4%
       const line_items = req.body.cartItems.map((item) => {
         const event = Event.findById(item.id);
-        if (user.my_promo_codes === event.promo_code) {
-          let price = item.price - (item.price / 100) * 4;
-          return {
-            price_data: {
-              currency: "usd",
-              product_data: {
-                name: item.title,
-                images: [item.img],
-                description: item.description,
-                date: item.date_event,
-                metadata: {
-                  id: item.id,
+        if (user.my_promo_codes.length > 0) {
+          for (let i = 0; i < user.my_promo_codes.length; i++) {
+            if (user.my_promo_codes[i] === event.promo_code) {
+              let price = item.price - (item.price / 100) * 4;
+              return {
+                price_data: {
+                  currency: "usd",
+                  product_data: {
+                    name: item.title,
+                    images: [item.img],
+                    description: item.description,
+                    date: item.date_event,
+                    metadata: {
+                      id: item.id,
+                    },
+                  },
+                  unit_amount: price * 100,
                 },
+              };
+            }
+          }
+        }
+        return {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: item.title,
+              images: [item.img],
+              description: item.description,
+              date: item.date_event,
+              metadata: {
+                id: item.id,
               },
-              unit_amount: price * 100,
             },
-          };
-        } else
-          return {
-            price_data: {
-              currency: "usd",
-              product_data: {
-                name: item.title,
-                images: [item.img],
-                description: item.description,
-                date: item.date_event,
-                metadata: {
-                  id: item.id,
-                },
-              },
-              unit_amount: item.price * 100,
-            },
-          };
+            unit_amount: item.price * 100,
+          },
+        };
       });
       const session = await stripe.checkout.sessions.create({
         line_items,
@@ -250,17 +254,36 @@ export class EventController {
       const user = await User.findById(req.user.id);
       let { id } = req.body;
       const event = await Event.findById(id);
-      // после оплаты отправляются билеты по почте и добавляется юзер в мемберы ивента
+      const month = event.date_event.getDate();
+      const day = event.date_event.getDay();
+      const year = event.date_event.getFullYear();
+      const hour = event.date_event.getHours();
+      const minutes = event.date_event.getMinutes();
+      const date = `${day}.${month}.${year} ${hour}:${minutes}`;
+      // после оплаты отправляются билеты по почте и добавляется юзер в мемберы ивента, юзеру зачисляется какой-то промокод со скидкой
       mailTransport().sendMail({
         from: process.env.USER,
         to: user.email,
         subject: `Your tickets from "Afisha"`,
-        html: `<h1>You bought tickets from "Afisha" on ${event.title}</h1>`,
-        html: `<h2>Starts at ${event.date_event}</h2>`,
-        html: `<h2>Address: ${event.location}</h2>`,
-        html: `<h1>Were paid: ${event.price}</h1>`,
+        html: `<h1>You bought tickets from "Afisha" on ${event.title}</h1>
+        <h2>Starts at ${date}</h2>
+        <h2>Address: ${event.location}</h2>
+        <h1>Was paid: ${event.price}</h1>`,
       });
       event.members = user._id;
+
+      // Определяем массив
+      const events = await Event.find();
+      let arr = [];
+      for (let i = 0; i < events.length; i++) {
+        arr.push(events[i].promo_code);
+      }
+      // Получаем случайный ключ массива
+      var rand = Math.floor(Math.random() * arr.length);
+      user.my_promo_codes = arr[rand];
+
+      console.log(user.my_promo_codes, event.members);
+      await user.save();
       await event.save();
       return res.json({ message: "Tickets were sent on your email" });
     } catch (error) {
