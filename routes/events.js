@@ -47,7 +47,7 @@ router.post("/:id/comments", eventController.createComment);
 // http://localhost:3002/api/events/:id/categories
 router.get("/:id/categories", eventController.getEventCategory);
 
-//Show similar events to chosen event by category +
+//Show similar events to chosen event by category -
 // http://localhost:3002/api/events/:id/similar-events
 router.get("/:id/similar-events", eventController.getSimilarEvent);
 
