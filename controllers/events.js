@@ -365,18 +365,39 @@ export class EventController {
       const event = await Event.findById(req.params.id);
       const all_events = await Event.find();
       let arr = [];
+      // for (let i = 0; i < all_events.length; i++) {
+      //   if (all_events[i].categories) {
+      //     console.log("-----", all_events[i].categories, event.categories);
+      //     arr = all_events[i].categories.filter(
+      //       (x) => event.categories.indexOf(x) !== -1
+      //     );
+      //   }
+      // }
+
+      var intersect = function (arr1, arr2) {
+        return arr1.filter(function (n) {
+          return arr2.indexOf(n) !== -1;
+        });
+      };
+
       for (let i = 0; i < all_events.length; i++) {
         if (all_events[i].categories) {
-          arr = all_events[i].categories.filter(
-            (x) => event.categories.indexOf(x) === -1
-          );
+          if (
+            intersect(event.categories, all_events[i].categories).length > 0 &&
+            event.id !== all_events[i].id
+          ) {
+            arr.push(all_events[i]);
+          }
         }
       }
-      let events = [];
-      for (let i = 0; i < arr.length; i++) {
-        events = await Event.find({ categories: { _id: arr[i] } });
-      }
-      res.json(events);
+      res.json(arr);
+
+      // console.log(arr);
+      // let events = [];
+      // for (let i = 0; i < arr.length; i++) {
+      //   events = await Event.find({ categories: { _id: arr[i] } });
+      // }
+      // res.json(events);
     } catch (error) {
       console.log(error);
       res.json({ message: "Something gone wrong" });
