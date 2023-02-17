@@ -1,5 +1,6 @@
 import Event from "../models/Event.js";
 import User from "../models/User.js";
+import Category from "../models/Category.js";
 import Comment from "../models/Comment.js";
 import promo from "../utils/create_promo.js";
 import mailTransport from "../utils/mailTransport.js";
@@ -45,9 +46,9 @@ export class EventController {
         description,
         date_event,
         date_post,
-        format,
         tickets,
         price,
+        categories,
         location,
         members_visibles,
       } = req.body;
@@ -56,15 +57,16 @@ export class EventController {
         !title ||
         !description ||
         !date_event ||
-        !format ||
         !tickets ||
         !location ||
+        !categories ||
         !price
       )
         return res.json({ message: "Content can not be empty" });
 
+      let fileName = "";
       if (req.files) {
-        let fileName = Date.now().toString() + req.files.image.name;
+        fileName = Date.now().toString() + req.files.image.name;
         const __dirname = dirname(fileURLToPath(import.meta.url));
         req.files.image.mv(path.join(__dirname, "..", "uploads", fileName));
       }
@@ -95,9 +97,9 @@ export class EventController {
         description,
         date_event,
         date_post,
-        format,
         tickets,
         location,
+        categories: categories,
         img: fileName,
         members_visibles,
         promo_code: promo(),
@@ -155,8 +157,8 @@ export class EventController {
         description,
         date_event,
         date_post,
+        categories,
         price,
-        format,
         tickets,
         location,
         members_visibles,
@@ -166,8 +168,10 @@ export class EventController {
       const user = await User.findById(req.user.id);
 
       if (req.user._id.equals(event.author) && user.role === "company") {
+        let fileName = "";
+
         if (req.files) {
-          let fileName = Date.now().toString() + req.files.image.name;
+          fileName = Date.now().toString() + req.files.image.name;
           const __dirname = dirname(fileURLToPath(import.meta.url));
           req.files.image.mv(path.join(__dirname, "..", "uploads", fileName));
         }
@@ -197,12 +201,12 @@ export class EventController {
             ? (date_post = date_p)
             : (date_post = date_post);
         }
+        if (categories) event.categories = categories;
         if (notifications) event.notifications = notifications;
         if (title) event.title = title;
         if (description) event.description = description;
         if (date_post) event.date_post = date_post;
         if (date_event) event.date_event = date_event;
-        if (format) event.format = format;
         if (tickets) event.tickets = tickets;
         if (location) event.location = location;
         if (fileName) event.img = fileName;
@@ -339,6 +343,42 @@ export class EventController {
       const arr = await Comment.find({ event: { _id: eventId } });
       res.json(arr);
     } catch (error) {
+      res.json({ message: "Something gone wrong" });
+    }
+  }
+  async getEventCategory(req, res) {
+    try {
+      const event = await Event.findById(req.params.id);
+      const list = await Promise.all(
+        event.categories.map((title) => {
+          return Category.findById(title);
+        })
+      );
+      res.json(list);
+    } catch (error) {
+      console.log(error);
+      res.json({ message: "Something gone wrong" });
+    }
+  }
+  async getSimilarEvent(req, res) {
+    try {
+      const event = await Event.findById(req.params.id);
+      const all_events = await Event.find();
+      let arr = [];
+      for (let i = 0; i < all_events.length; i++) {
+        if (all_events[i].categories) {
+          arr = all_events[i].categories.filter(
+            (x) => event.categories.indexOf(x) === -1
+          );
+        }
+      }
+      let events = [];
+      for (let i = 0; i < arr.length; i++) {
+        events = await Event.find({ categories: { _id: arr[i] } });
+      }
+      res.json(events);
+    } catch (error) {
+      console.log(error);
       res.json({ message: "Something gone wrong" });
     }
   }

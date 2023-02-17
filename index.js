@@ -12,6 +12,7 @@ import { post_it_now } from "./utils/post_it_now.js";
 import adminRouter from "./routes/admin.router.js";
 // import stripe from "./routes/stripe.js";
 import commentRoute from "./routes/comments.js";
+import categoryRoute from "./routes/categories.js";
 
 const app = express();
 dotenv.config();
@@ -38,6 +39,7 @@ app.use("/api/auth", authRoute);
 app.use("/api/users", usersRoute);
 app.use("/api/events", eventRoute);
 app.use("/api/comments", commentRoute);
+app.use("/api/categories", categoryRoute);
 // app.use("/api/stripe", stripe);
 
 async function start() {

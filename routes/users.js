@@ -15,6 +15,10 @@ router.get("/events", userController.getMyEvents);
 // http://localhost:3002/api/users/tickets
 router.get("/tickets", userController.getMyTickets);
 
+//Show all company's events, limit in 5 +
+// http://localhost:3002/api/users/:id/events
+router.get("/:id/events", userController.getCompanyEvents);
+
 // Delete user by id +
 // http://localhost:3002/api/users/:id
 router.delete("/:id", userController.deleteUser);

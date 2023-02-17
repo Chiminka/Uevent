@@ -131,4 +131,17 @@ export class UserController {
       res.json({ message: "Updating user error" });
     }
   }
+  async getCompanyEvents(req, res) {
+    try {
+      // получить все ивенты компании
+      const user = await User.findById(req.params.id);
+      const userId = user.id;
+      const events = await Event.find({ author: { _id: userId } })
+        .sort("-date_event")
+        .limit(5);
+      res.json(events);
+    } catch (error) {
+      res.json({ message: "Getting events error" });
+    }
+  }
 }

@@ -30,14 +30,16 @@ const EventSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  format: {
-    type: String,
-    required: true,
-  },
   tickets: {
     type: Number,
     default: "10",
   },
+  categories: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+    },
+  ],
   members: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -71,4 +73,3 @@ export default mongoose.model("Event", EventSchema);
 //members_visibles: everyone || only_members
 //notifications - надо ли уведомлять о добавленных мемберах
 //visible - ??
-// стоит отделить формат и тематику в отдельную модель
