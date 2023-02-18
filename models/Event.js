@@ -40,10 +40,10 @@ const EventSchema = new mongoose.Schema({
       ref: "Category",
     },
   ],
-  members: [
+  ticket: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Ticket",
     },
   ],
   img: {
@@ -72,4 +72,4 @@ export default mongoose.model("Event", EventSchema);
 
 //members_visibles: everyone || only_members
 //notifications - надо ли уведомлять о добавленных мемберах
-//visible - ??
+//visible - если пользователь отложил пост на какое-то время

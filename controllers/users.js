@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import mailTransport from "../utils/mailTransport.js";
 import { fileURLToPath } from "url";
 import path, { dirname } from "path";
+import Ticket from "../models/Ticket.js";
 
 export class UserController {
   async getMyEvents(req, res) {
@@ -24,14 +25,12 @@ export class UserController {
   async getMyTickets(req, res) {
     try {
       // получить все приобретенные билеты
-      const user = await User.findById(req.user.id);
-      const userId = user.id;
-
-      const tickets = await Event.find().sort("-date_event");
+      const tickets = await Ticket.find();
       let mas = [];
       for (let i = 0; i < tickets.length; i++) {
-        for (let j = 0; j < tickets[i].members.length; j++)
-          if (tickets[i].members[j] == userId) mas.push(tickets[i]);
+        if (tickets[i].user.toString() === req.user._id.toString()) {
+          mas.push(tickets[i]);
+        }
       }
       res.json(mas);
     } catch (error) {

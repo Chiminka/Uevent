@@ -47,8 +47,12 @@ router.post("/:id/comments", eventController.createComment);
 // http://localhost:3002/api/events/:id/categories
 router.get("/:id/categories", eventController.getEventCategory);
 
-//Show similar events to chosen event by category +
-// http://localhost:3002/api/events/:id/similar-events
-router.get("/:id/similar-events", eventController.getSimilarEvent);
+// //Show similar events to chosen event by category +
+// // http://localhost:3002/api/events/:id/similar-events
+// router.get("/:id/similar-events", eventController.getSimilarEvent);
+
+//Get visible members of event +
+// http://localhost:3002/api/events/:id/members
+// router.get("/:id/members", eventController.getVisibleMembers);
 
 export default router;

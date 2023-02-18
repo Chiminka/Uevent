@@ -2,6 +2,8 @@ import Event from "../models/Event.js";
 import User from "../models/User.js";
 import Category from "../models/Category.js";
 import Comment from "../models/Comment.js";
+import Ticket from "../models/Ticket.js";
+
 import promo from "../utils/create_promo.js";
 import mailTransport from "../utils/mailTransport.js";
 import Stripe from "stripe";
@@ -13,8 +15,59 @@ const stripe = Stripe(process.env.STRIPE_KEY);
 export class EventController {
   async getEventById(req, res) {
     try {
-      const event = await Event.findById({ _id: req.params.id });
-      res.json(event);
+      const event = await Event.findById(req.params.id);
+
+      const all_events = await Event.find();
+      let similar_events = [];
+
+      var intersect = function (arr1, arr2) {
+        return arr1.filter(function (n) {
+          return arr2.indexOf(n) !== -1;
+        });
+      };
+
+      for (let i = 0; i < all_events.length; i++) {
+        if (all_events[i].categories) {
+          if (
+            intersect(event.categories, all_events[i].categories).length > 0 &&
+            event.id !== all_events[i].id
+          ) {
+            similar_events.push(all_events[i]);
+          }
+        }
+      }
+
+      const members = [];
+      if (event.members_visibles === "everyone") {
+        for (let i = 0; i < event.ticket.length; i++) {
+          let ticket = await Ticket.findById(event.ticket[i]);
+          if (ticket.visible === "yes") {
+            let user = await User.findById(ticket.user);
+            members.push(user);
+          }
+        }
+      } else {
+        let fl;
+        for (let i = 0; i < event.ticket.length; i++) {
+          let t = await Ticket.findById(event.ticket[i]);
+          if (req.user._id.toString() === t.user.toString()) {
+            fl = 1;
+            break;
+          }
+        }
+
+        for (let i = 0; i < event.ticket.length; i++) {
+          let ticket = await Ticket.findById(event.ticket[i]);
+          if (fl === 1) {
+            if (ticket.visible === "yes") {
+              let user = await User.findById(ticket.user);
+              members.push(user);
+            }
+          }
+        }
+      }
+
+      res.json({ event, similar_events, members });
     } catch (error) {
       res.json({ message: "Getting event error" });
     }
@@ -280,8 +333,9 @@ export class EventController {
   async after_buying_action(req, res) {
     try {
       const user = await User.findById(req.user.id);
-      let { id } = req.body;
-      const event = await Event.findById(id);
+      let { event_id, visible } = req.body;
+      const event = await Event.findById(event_id);
+
       const month = event.date_event.getDate();
       const day = event.date_event.getDay();
       const year = event.date_event.getFullYear();
@@ -293,12 +347,20 @@ export class EventController {
         from: process.env.USER,
         to: user.email,
         subject: `Your tickets from "Afisha"`,
-        html: `<h1>You bought tickets from "Afisha" on ${event.title}</h1>
+        html: `<h1>${user.full_name} bought tickets from "Afisha" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location}</h2>
         <h1>Was paid: ${event.price}</h1>`,
       });
-      event.members = user._id;
+
+      // here made a ticket
+      const newTicket = new Ticket({
+        visible,
+        user: req.user.id,
+      });
+      await newTicket.save();
+
+      event.ticket.push(newTicket.id);
       event.tickets = event.tickets - 1;
 
       // Определяем массив
@@ -311,7 +373,6 @@ export class EventController {
       var rand = Math.floor(Math.random() * arr.length);
       user.my_promo_codes = arr[rand];
 
-      console.log(user.my_promo_codes, event.members);
       await user.save();
       await event.save();
       return res.json({ message: "Tickets were sent on your email" });
@@ -360,47 +421,50 @@ export class EventController {
       res.json({ message: "Something gone wrong" });
     }
   }
-  async getSimilarEvent(req, res) {
-    try {
-      const event = await Event.findById(req.params.id);
-      const all_events = await Event.find();
-      let arr = [];
-      // for (let i = 0; i < all_events.length; i++) {
-      //   if (all_events[i].categories) {
-      //     console.log("-----", all_events[i].categories, event.categories);
-      //     arr = all_events[i].categories.filter(
-      //       (x) => event.categories.indexOf(x) !== -1
-      //     );
-      //   }
-      // }
+  // async getVisibleMembers(req, res) {
+  //   try {
+  //     const event = await Event.findById(req.params.id);
+  //     const members = [];
+  //     for (let i = 0; i < event.ticket.length; i++) {
+  //       let ticket = await Ticket.findById(event.ticket[i]);
+  //       if (ticket.visible === "yes") {
+  //         let user = await User.findById(ticket.user);
+  //         members.push(user);
+  //       }
+  //     }
+  //     res.json(members);
+  //   } catch (error) {
+  //     console.log(error);
+  //     res.json({ message: "Something gone wrong" });
+  //   }
+  // }
 
-      var intersect = function (arr1, arr2) {
-        return arr1.filter(function (n) {
-          return arr2.indexOf(n) !== -1;
-        });
-      };
+  // async getSimilarEvent(req, res) {
+  //   try {
+  //     const event = await Event.findById(req.params.id);
+  //     const all_events = await Event.find();
+  //     let arr = [];
 
-      for (let i = 0; i < all_events.length; i++) {
-        if (all_events[i].categories) {
-          if (
-            intersect(event.categories, all_events[i].categories).length > 0 &&
-            event.id !== all_events[i].id
-          ) {
-            arr.push(all_events[i]);
-          }
-        }
-      }
-      res.json(arr);
+  //     var intersect = function (arr1, arr2) {
+  //       return arr1.filter(function (n) {
+  //         return arr2.indexOf(n) !== -1;
+  //       });
+  //     };
 
-      // console.log(arr);
-      // let events = [];
-      // for (let i = 0; i < arr.length; i++) {
-      //   events = await Event.find({ categories: { _id: arr[i] } });
-      // }
-      // res.json(events);
-    } catch (error) {
-      console.log(error);
-      res.json({ message: "Something gone wrong" });
-    }
-  }
+  //     for (let i = 0; i < all_events.length; i++) {
+  //       if (all_events[i].categories) {
+  //         if (
+  //           intersect(event.categories, all_events[i].categories).length > 0 &&
+  //           event.id !== all_events[i].id
+  //         ) {
+  //           arr.push(all_events[i]);
+  //         }
+  //       }
+  //     }
+  //     res.json(arr);
+  //   } catch (error) {
+  //     console.log(error);
+  //     res.json({ message: "Something gone wrong" });
+  //   }
+  // }
 }
