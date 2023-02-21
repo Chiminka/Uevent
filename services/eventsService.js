@@ -344,7 +344,6 @@ const after_buying_action = async (req) => {
   const newTicket = new Ticket({
     visible,
     seat,
-    price: event.price,
     user: req.user.id,
     event: req.params.id,
   });
