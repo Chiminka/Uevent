@@ -40,12 +40,6 @@ const EventSchema = new mongoose.Schema({
       ref: "Category",
     },
   ],
-  ticket: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Ticket",
-    },
-  ],
   img: {
     type: String,
     default:

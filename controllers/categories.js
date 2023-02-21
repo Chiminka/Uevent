@@ -1,29 +1,28 @@
-import Category from "../models/Category.js";
-import Event from "../models/Event.js";
+import categoryService from "../services/categoriesService.js";
 
 export class CategoryController {
   async allCategories(req, res) {
     try {
-      const categories = await Category.find();
-      res.json(categories);
+      const allCategories = await categoryService.allCategories();
+      res.json(allCategories);
     } catch (error) {
       res.json({ message: "Something gone wrong" });
     }
   }
   async byId(req, res) {
     try {
-      const category = await Category.findById(req.params.id);
-      res.json(category);
+      const byId = await categoryService.byId(req.params.id);
+      res.json(byId);
     } catch (error) {
       res.json({ message: "Something gone wrong" });
     }
   }
   async categoryEvents(req, res) {
     try {
-      const category = await Category.findById(req.params.id);
-      const categoryId = category.id;
-      const events = await Event.find({ categories: { _id: categoryId } });
-      res.json(events);
+      const categoryEvents = await categoryService.categoryEvents(
+        req.params.id
+      );
+      res.json(categoryEvents);
     } catch (error) {
       res.json({ message: "Something gone wrong" });
     }

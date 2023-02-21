@@ -1,27 +1,24 @@
-import Comment from "../models/Comment.js";
-import User from "../models/User.js";
+import commentService from "../services/commentsService.js";
 
 export class CommentController {
   // Get Comment By Id
   async byId(req, res) {
     try {
-      const comment = await Comment.findById(req.params.id);
-      res.json(comment);
+      const byId = await commentService.byId(req.params.id);
+      res.json(byId);
     } catch (error) {
+      console.log(error);
       res.json({ message: "Something gone wrong" });
     }
   }
   // Remove comment
   async removeComment(req, res) {
     try {
-      //если коммент юзера
-      const userId = req.user._id;
-      const comment_user = await Comment.findById(req.params.id);
-      if (userId.equals(comment_user.author)) {
-        const comment = await Comment.findByIdAndDelete(req.params.id);
-        if (!comment) return res.json({ message: "That comment is not exist" });
-        res.json({ message: "Comment was deleted" });
-      } else return res.json({ message: "That's not your comment" });
+      const removeComment = await commentService.removeComment(
+        req.user._id,
+        req.params.id
+      );
+      res.json(removeComment);
     } catch (error) {
       res.json({ message: "Something gone wrong" });
     }
@@ -29,17 +26,12 @@ export class CommentController {
   // Update Comment
   async UpdateComment(req, res) {
     try {
-      //только юзер свой
-      const userId = await User.findById(req.user.id);
-      const comment_user = await Comment.findById(req.params.id);
-      const uId = userId._id;
-      if (uId.equals(comment_user.author)) {
-        const { comment } = req.body;
-        const com = await Comment.findById(req.params.id);
-        com.comment = comment;
-        await com.save();
-        res.json(com);
-      } else return res.json("That's not your comment");
+      const UpdateComment = await commentService.UpdateComment(
+        req.user.id,
+        req.params.id,
+        req.body
+      );
+      res.json(UpdateComment);
     } catch (error) {
       console.log(error);
       res.json({ message: "Something gone wrong" });

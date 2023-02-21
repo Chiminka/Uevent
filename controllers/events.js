@@ -1,166 +1,36 @@
-import Event from "../models/Event.js";
-import User from "../models/User.js";
-import Category from "../models/Category.js";
-import Comment from "../models/Comment.js";
-import Ticket from "../models/Ticket.js";
-
-import promo from "../utils/create_promo.js";
-import mailTransport from "../utils/mailTransport.js";
-import Stripe from "stripe";
-import { fileURLToPath } from "url";
-import path, { dirname } from "path";
-
-const stripe = Stripe(process.env.STRIPE_KEY);
+import eventService from "../services/eventsService.js";
 
 export class EventController {
   async getEventById(req, res) {
     try {
-      const event = await Event.findById(req.params.id);
-
-      const all_events = await Event.find();
-      let similar_events = [];
-
-      var intersect = function (arr1, arr2) {
-        return arr1.filter(function (n) {
-          return arr2.indexOf(n) !== -1;
-        });
-      };
-
-      for (let i = 0; i < all_events.length; i++) {
-        if (all_events[i].categories) {
-          if (
-            intersect(event.categories, all_events[i].categories).length > 0 &&
-            event.id !== all_events[i].id
-          ) {
-            similar_events.push(all_events[i]);
-          }
-        }
-      }
-
-      const members = [];
-      if (event.members_visibles === "everyone") {
-        for (let i = 0; i < event.ticket.length; i++) {
-          let ticket = await Ticket.findById(event.ticket[i]);
-          if (ticket.visible === "yes") {
-            let user = await User.findById(ticket.user);
-            members.push(user);
-          }
-        }
-      } else {
-        let fl;
-        for (let i = 0; i < event.ticket.length; i++) {
-          let t = await Ticket.findById(event.ticket[i]);
-          if (req.user._id.toString() === t.user.toString()) {
-            fl = 1;
-            break;
-          }
-        }
-
-        for (let i = 0; i < event.ticket.length; i++) {
-          let ticket = await Ticket.findById(event.ticket[i]);
-          if (fl === 1) {
-            if (ticket.visible === "yes") {
-              let user = await User.findById(ticket.user);
-              members.push(user);
-            }
-          }
-        }
-      }
-
-      res.json({ event, similar_events, members });
+      const getEventById = await eventService.getEventById(
+        req.params.id,
+        req.user._id
+      );
+      res.json(getEventById);
     } catch (error) {
       res.json({ message: "Getting event error" });
     }
   }
   async getAllEvents(req, res) {
     try {
-      const event = await Event.find({ visible: "yes" }).sort("-date_event");
-      let arr_event = [];
-      for (let i = 0; i < event.length; i++) {
-        if (event[i].tickets > 0) arr_event.push(event[i]);
-      }
-      res.json(arr_event);
+      const getAllEvents = await eventService.getAllEvents();
+      res.json(getAllEvents);
     } catch (error) {
+      console.log(error);
       res.json({ message: "Getting event error" });
     }
   }
   async createEvent(req, res) {
     // может только компания
     try {
-      const user = await User.findById(req.user.id);
-      if (user.role !== "company") {
-        res.json({ message: "Access denied" });
-        return;
-      }
-
-      let {
-        notifications,
-        title,
-        description,
-        date_event,
-        date_post,
-        tickets,
-        price,
-        categories,
-        location,
-        members_visibles,
-      } = req.body;
-
-      if (
-        !title ||
-        !description ||
-        !date_event ||
-        !tickets ||
-        !location ||
-        !categories ||
-        !price
-      )
-        return res.json({ message: "Content can not be empty" });
-
-      let fileName = "";
-      if (req.files) {
-        fileName = Date.now().toString() + req.files.image.name;
-        const __dirname = dirname(fileURLToPath(import.meta.url));
-        req.files.image.mv(path.join(__dirname, "..", "uploads", fileName));
-      }
-
-      if (fileName.length < 1) {
-        fileName =
-          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQw-ByquDvpBITEAHnGNeqUyQGw7KX3gqz3A5vQyICAV67mzUB2G8HECVilUr521eXJx04&usqp=CAU";
-      }
-      if (date_event) {
-        const date_e = new Date(`${date_event}T00:00:00`);
-        date_event = !date_event.includes("T")
-          ? (date_event = date_e)
-          : (date_event = date_event);
-      }
-      if (date_post) {
-        const date_p = new Date(`${date_post}T00:00:00`);
-        date_post = !date_post.includes("T")
-          ? (date_post = date_p)
-          : (date_post = date_post);
-      } else {
-        date_post = new Date();
-        date_post.setSeconds(date_post.getSeconds() + 70);
-      }
-      const newEvent = new Event({
-        notifications,
-        title,
-        price,
-        description,
-        date_event,
-        date_post,
-        tickets,
-        location,
-        categories: categories,
-        img: fileName,
-        members_visibles,
-        promo_code: promo(),
-        author: req.user.id,
-      });
-
-      await newEvent.save();
-      return res.json(newEvent);
+      const createEvent = await eventService.createEvent(
+        req.user.id,
+        req.body,
+        req,
+        req.user.id
+      );
+      res.json(createEvent);
     } catch (error) {
       console.log(error);
       res.json({ message: "Creating event error" });
@@ -168,34 +38,8 @@ export class EventController {
   }
   async deleteEvent(req, res) {
     try {
-      // может только компания, которая создала
-      const event = await Event.findById(req.params.id);
-      const user = await User.findById(req.user.id);
-
-      if (event.members.length > 0) {
-        for (let i = 0; i < event.members.length; i++) {
-          const member = await User.findById(event.members[i]);
-          const author = await User.findById(event.author);
-          mailTransport().sendMail({
-            from: author.email,
-            to: member.email,
-            subject: `Event "${event.title}" was deleted by organizer`,
-          });
-        }
-        if (req.user._id.equals(event.author) && user.role === "company") {
-          await Event.findByIdAndDelete(req.params.id);
-          return res.json({
-            message: "Event was deleted and members were warned",
-          });
-        } else return res.json({ message: "No access!" });
-      } else {
-        if (req.user._id.equals(event.author) && user.role === "company") {
-          await Event.findByIdAndDelete(req.params.id);
-          return res.json({
-            message: "Event was deleted",
-          });
-        } else return res.json({ message: "No access!" });
-      }
+      const deleteEvent = await eventService.deleteEvent(req);
+      res.json(deleteEvent);
     } catch (error) {
       console.log(error);
       res.json({ message: "Deleting event error" });
@@ -203,72 +47,8 @@ export class EventController {
   }
   async updateEvent(req, res) {
     try {
-      // может только компания, которая создала
-      let {
-        notifications,
-        title,
-        description,
-        date_event,
-        date_post,
-        categories,
-        price,
-        tickets,
-        location,
-        members_visibles,
-      } = req.body;
-
-      const event = await Event.findById(req.params.id);
-      const user = await User.findById(req.user.id);
-
-      if (req.user._id.equals(event.author) && user.role === "company") {
-        let fileName = "";
-
-        if (req.files) {
-          fileName = Date.now().toString() + req.files.image.name;
-          const __dirname = dirname(fileURLToPath(import.meta.url));
-          req.files.image.mv(path.join(__dirname, "..", "uploads", fileName));
-        }
-
-        if (fileName.length < 1) {
-          fileName = event.img;
-        }
-
-        if (date_event) {
-          const date_e = new Date(`${date_event}T00:00:00`);
-          date_event = !date_event.includes("T")
-            ? (date_event = date_e)
-            : (date_event = date_event);
-          for (let i = 0; i < event.members.length; i++) {
-            const member = await User.findById(event.members[i]);
-            const author = await User.findById(event.author);
-            mailTransport().sendMail({
-              from: author.email,
-              to: member.email,
-              subject: `Event "${event.title}" was changed by organizer. Check it on the site`,
-            });
-          }
-        }
-        if (date_post) {
-          const date_p = new Date(`${date_post}T00:00:00`);
-          date_post = !date_post.includes("T")
-            ? (date_post = date_p)
-            : (date_post = date_post);
-        }
-        if (categories) event.categories = categories;
-        if (notifications) event.notifications = notifications;
-        if (title) event.title = title;
-        if (description) event.description = description;
-        if (date_post) event.date_post = date_post;
-        if (date_event) event.date_event = date_event;
-        if (tickets) event.tickets = tickets;
-        if (location) event.location = location;
-        if (fileName) event.img = fileName;
-        if (price) event.price = price;
-        if (members_visibles) event.members_visibles = members_visibles;
-        await event.save();
-
-        return res.json(event);
-      } else return res.json({ message: "No access!" });
+      const updateEvent = await eventService.updateEvent(req);
+      res.json(updateEvent);
     } catch (error) {
       console.log(error);
       res.json({ message: "Updating event error" });
@@ -276,55 +56,8 @@ export class EventController {
   }
   async payment(req, res) {
     try {
-      const user = await User.findById(req.user.id);
-      // тут нужно проверять промо код, если есть, то давать скидку на 4%
-      const line_items = req.body.cartItems.map((item) => {
-        const event = Event.findById(item.id);
-        if (user.my_promo_codes.length > 0) {
-          for (let i = 0; i < user.my_promo_codes.length; i++) {
-            if (user.my_promo_codes[i] === event.promo_code) {
-              let price = item.price - (item.price / 100) * 4;
-              return {
-                price_data: {
-                  currency: "usd",
-                  product_data: {
-                    name: item.title,
-                    images: [item.img],
-                    description: item.description,
-                    date: item.date_event,
-                    metadata: {
-                      id: item.id,
-                    },
-                  },
-                  unit_amount: price * 100,
-                },
-              };
-            }
-          }
-        }
-        return {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: item.title,
-              images: [item.img],
-              description: item.description,
-              date: item.date_event,
-              metadata: {
-                id: item.id,
-              },
-            },
-            unit_amount: item.price * 100,
-          },
-        };
-      });
-      const session = await stripe.checkout.sessions.create({
-        line_items,
-        mode: "payment",
-        success_url: `${process.env.BASE_URL}/checkout-success`,
-        cancel_url: `${process.env.BASE_URL}/cart`,
-      });
-      res.send({ url: session.url });
+      const payment = await eventService.payment(req);
+      res.json(payment);
     } catch (error) {
       console.log(error);
       res.json({ message: "Buying tickets error" });
@@ -332,50 +65,8 @@ export class EventController {
   }
   async after_buying_action(req, res) {
     try {
-      const user = await User.findById(req.user.id);
-      let { event_id, visible } = req.body;
-      const event = await Event.findById(event_id);
-
-      const month = event.date_event.getDate();
-      const day = event.date_event.getDay();
-      const year = event.date_event.getFullYear();
-      const hour = event.date_event.getHours();
-      const minutes = event.date_event.getMinutes();
-      const date = `${day}.${month}.${year} ${hour}:${minutes}`;
-      // после оплаты отправляются билеты по почте и добавляется юзер в мемберы ивента, юзеру зачисляется какой-то промокод со скидкой, -1 билет в счетчике билетов ивента
-      mailTransport().sendMail({
-        from: process.env.USER,
-        to: user.email,
-        subject: `Your tickets from "Afisha"`,
-        html: `<h1>${user.full_name} bought tickets from "Afisha" on ${event.title}</h1>
-        <h2>Starts at ${date}</h2>
-        <h2>Address: ${event.location}</h2>
-        <h1>Was paid: ${event.price}</h1>`,
-      });
-
-      // here made a ticket
-      const newTicket = new Ticket({
-        visible,
-        user: req.user.id,
-      });
-      await newTicket.save();
-
-      event.ticket.push(newTicket.id);
-      event.tickets = event.tickets - 1;
-
-      // Определяем массив
-      const events = await Event.find();
-      let arr = [];
-      for (let i = 0; i < events.length; i++) {
-        arr.push(events[i].promo_code);
-      }
-      // Получаем случайный ключ массива
-      var rand = Math.floor(Math.random() * arr.length);
-      user.my_promo_codes = arr[rand];
-
-      await user.save();
-      await event.save();
-      return res.json({ message: "Tickets were sent on your email" });
+      const after_buying_action = await eventService.after_buying_action(req);
+      res.json(after_buying_action);
     } catch (error) {
       console.log(error);
       res.json({ message: "Sending tickets error" });
@@ -383,15 +74,8 @@ export class EventController {
   }
   async createComment(req, res) {
     try {
-      const { comment } = req.body;
-      if (!comment) return res.json({ message: "Comment can not be empty" });
-      const newComment = new Comment({
-        comment,
-        author: req.user.id,
-        event: req.params.id,
-      });
-      await newComment.save();
-      res.json(newComment);
+      const createComment = await eventService.createComment(req);
+      res.json(createComment);
     } catch (error) {
       console.log(error);
       res.json({ message: "Something gone wrong" });
@@ -399,72 +83,19 @@ export class EventController {
   }
   async getEventComments(req, res) {
     try {
-      const event = await Event.findById(req.params.id);
-      const eventId = event.id;
-      const arr = await Comment.find({ event: { _id: eventId } });
-      res.json(arr);
+      const getEventComments = await eventService.getEventComments(req);
+      res.json(getEventComments);
     } catch (error) {
       res.json({ message: "Something gone wrong" });
     }
   }
   async getEventCategory(req, res) {
     try {
-      const event = await Event.findById(req.params.id);
-      const list = await Promise.all(
-        event.categories.map((title) => {
-          return Category.findById(title);
-        })
-      );
-      res.json(list);
+      const getEventCategory = await eventService.getEventCategory(req);
+      res.json(getEventCategory);
     } catch (error) {
       console.log(error);
       res.json({ message: "Something gone wrong" });
     }
   }
-  // async getVisibleMembers(req, res) {
-  //   try {
-  //     const event = await Event.findById(req.params.id);
-  //     const members = [];
-  //     for (let i = 0; i < event.ticket.length; i++) {
-  //       let ticket = await Ticket.findById(event.ticket[i]);
-  //       if (ticket.visible === "yes") {
-  //         let user = await User.findById(ticket.user);
-  //         members.push(user);
-  //       }
-  //     }
-  //     res.json(members);
-  //   } catch (error) {
-  //     console.log(error);
-  //     res.json({ message: "Something gone wrong" });
-  //   }
-  // }
-
-  // async getSimilarEvent(req, res) {
-  //   try {
-  //     const event = await Event.findById(req.params.id);
-  //     const all_events = await Event.find();
-  //     let arr = [];
-
-  //     var intersect = function (arr1, arr2) {
-  //       return arr1.filter(function (n) {
-  //         return arr2.indexOf(n) !== -1;
-  //       });
-  //     };
-
-  //     for (let i = 0; i < all_events.length; i++) {
-  //       if (all_events[i].categories) {
-  //         if (
-  //           intersect(event.categories, all_events[i].categories).length > 0 &&
-  //           event.id !== all_events[i].id
-  //         ) {
-  //           arr.push(all_events[i]);
-  //         }
-  //       }
-  //     }
-  //     res.json(arr);
-  //   } catch (error) {
-  //     console.log(error);
-  //     res.json({ message: "Something gone wrong" });
-  //   }
-  // }
 }
