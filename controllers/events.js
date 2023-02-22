@@ -3,18 +3,21 @@ import eventService from "../services/eventsService.js";
 export class EventController {
   async getEventById(req, res) {
     try {
+      let userID = "";
+      if (req.user) userID = req.user._id;
       const getEventById = await eventService.getEventById(
         req.params.id,
-        req.user._id
+        userID
       );
       res.json(getEventById);
     } catch (error) {
+      console.log(error);
       res.json({ message: "Getting event error" });
     }
   }
   async getAllEvents(req, res) {
     try {
-      const getAllEvents = await eventService.getAllEvents();
+      const getAllEvents = await eventService.getAllEvents(req);
       res.json(getAllEvents);
     } catch (error) {
       console.log(error);

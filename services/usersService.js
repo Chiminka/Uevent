@@ -33,7 +33,7 @@ const deleteUser = async (req, res) => {
   const userID = req.params.id;
 
   if (req.user._id.equals(user._id)) {
-    // await User.findByIdAndDelete(req.params.id);
+    await User.findByIdAndDelete(req.params.id);
     const cookies = req.cookies;
     if (!cookies?.jwt) return res.sendStatus(204); //No content
     res.clearCookie("jwt", {

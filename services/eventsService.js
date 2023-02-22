@@ -5,6 +5,7 @@ import Comment from "../models/Comment.js";
 import Ticket from "../models/Ticket.js";
 
 import promo from "../utils/create_promo.js";
+import { format_sort, themes_sort, date_sort } from "../utils/sorting.js";
 import mailTransport from "../utils/mailTransport.js";
 import Stripe from "stripe";
 import { fileURLToPath } from "url";
@@ -37,19 +38,21 @@ const getEventById = async (id, userID) => {
 
   const members = [];
 
-  let ticket = await Ticket.findOne({ event: { _id: id } });
-  if (event.members_visibles === "everyone") {
-    if (ticket.visible === "yes") {
-      let user = await User.findById(ticket.user);
-      members.push(user);
-    }
-  } else {
-    let tickets = await Ticket.find();
-    for (let i = 0; i < tickets.length; i++) {
-      if (userID.toString() === tickets[i].user.toString()) {
-        if (ticket.visible === "yes") {
-          let user = await User.findById(ticket.user);
-          members.push(user);
+  let ticket = await Ticket.findOne({ event: id });
+  if (ticket !== null) {
+    if (event.members_visibles === "everyone") {
+      if (ticket.visible === "yes") {
+        let user = await User.findById(ticket.user);
+        members.push(user);
+      }
+    } else {
+      let tickets = await Ticket.find();
+      for (let i = 0; i < tickets.length; i++) {
+        if (userID.toString() === tickets[i].user.toString()) {
+          if (ticket.visible === "yes") {
+            let user = await User.findById(ticket.user);
+            members.push(user);
+          }
         }
       }
     }
@@ -57,9 +60,30 @@ const getEventById = async (id, userID) => {
 
   return { event, similar_events, members };
 };
-const getAllEvents = async () => {
-  const event = await Event.find({ visible: "yes" }).sort("-date_event");
+const getAllEvents = async (req) => {
+  const { categoryType } = req.body;
+  let event = "";
+  switch (categoryType) {
+    case "format": {
+      const result = await format_sort();
+      event = result;
+      break;
+    }
+    case "themes": {
+      const result = await themes_sort();
+      event = result;
+      break;
+    }
+    default: {
+      const result = await date_sort();
+      event = result;
+      break;
+    }
+  }
+
+  console.log(event); // здесь будет значение, возвращаемое промисом
   let arr_event = [];
+  // здесь находятся ивенты, у которых есть еще билеты
   for (let i = 0; i < event.length; i++) {
     if (event[i].tickets > 0) arr_event.push(event[i]);
   }

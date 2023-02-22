@@ -48,7 +48,37 @@ const refresh = async (req, res, next, cookies) => {
   );
 };
 
-export const verifyJWT = async (req, res, next) => {
+const verifyUser = async (req, res, next) => {
+  const cookies = req.cookies;
+  if (!cookies?.accessToken) {
+    req.user = null;
+    next();
+  } else if (cookies.accessToken) {
+    const token = cookies.accessToken;
+    try {
+      const decode = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findOne({ email: decode.UserInfo.email });
+      if (!user) {
+        return res.json({ success: false, message: "1unauthorized access!" });
+      }
+      req.user = user;
+      next();
+    } catch (error) {
+      if (error.name === "JsonWebTokenError") {
+        return res.json({ success: false, message: "2unauthorized access!" });
+      }
+      if (error.name === "TokenExpiredError") {
+        refresh(req, res, next, cookies);
+        return;
+      }
+      return res.json({ success: false, message: "Internal server error!" });
+    }
+  } else {
+    res.json({ success: false, message: "3unauthorized access!" });
+  }
+};
+
+const verifyJWT = async (req, res, next) => {
   const cookies = req.cookies;
   if (!cookies?.accessToken)
     return res.status(401).json({ message: "Unauthorized" });
@@ -81,3 +111,5 @@ export const verifyJWT = async (req, res, next) => {
     res.json({ success: false, message: "3unauthorized access!" });
   }
 };
+
+export { verifyUser, verifyJWT };
