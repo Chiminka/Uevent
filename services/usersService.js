@@ -28,11 +28,32 @@ const getMyTickets = async (req) => {
   }
   return mas;
 };
+// если компания удалила себя - оповестить
 const deleteUser = async (req, res) => {
   const user = await User.findById(req.params.id);
   const userID = req.params.id;
 
   if (req.user._id.equals(user._id)) {
+    const users = await User.find();
+    let arr_subs = [];
+    for (let i = 0; i < users.length; i++) {
+      if (users[i].subscriptions)
+        for (let j = 0; j < users[i].subscriptions.length; j++) {
+          if (users[i].subscriptions[j].toString() === user.id.toString()) {
+            arr_subs.push(users[i]);
+          }
+        }
+    }
+    if (arr_subs)
+      for (let i = 0; i < arr_subs.length; i++) {
+        const member = await User.findById(arr_subs[i].id);
+        const author = await User.findById(user.id);
+        mailTransport().sendMail({
+          from: author.email,
+          to: member.email,
+          subject: `Company ${author.full_name} no longer in service. The company has been deleted.`,
+        });
+      }
     await User.findByIdAndDelete(req.params.id);
     const cookies = req.cookies;
     if (!cookies?.jwt) return res.sendStatus(204); //No content
@@ -49,11 +70,33 @@ const deleteUser = async (req, res) => {
     return { message: "Cookie were cleared, user was deleted" };
   } else return { message: "No access!" };
 };
+// если компания изменила данные о себе - оповестить
 const updateUser = async (req) => {
   const { full_name, username, password, email } = req.body;
   const user = await User.findById(req.params.id);
 
   if (req.user._id.equals(user._id)) {
+    const users = await User.find();
+    let arr_subs = [];
+    for (let i = 0; i < users.length; i++) {
+      if (users[i].subscriptions)
+        for (let j = 0; j < users[i].subscriptions.length; j++) {
+          if (users[i].subscriptions[j].toString() === user.id.toString()) {
+            arr_subs.push(users[i]);
+          }
+        }
+    }
+    if (arr_subs)
+      for (let i = 0; i < arr_subs.length; i++) {
+        const member = await User.findById(arr_subs[i].id);
+        const author = await User.findById(user.id);
+        mailTransport().sendMail({
+          from: author.email,
+          to: member.email,
+          subject: `The company ${author.full_name} has been changed.`,
+        });
+      }
+
     let fileName = "";
     if (req.files) {
       fileName = Date.now().toString() + req.files.image.name;
@@ -126,6 +169,12 @@ const getCompanyEvents = async (req) => {
     .limit(5);
   return events;
 };
+const subscriptionUser = async (req) => {
+  const user = await User.findById(req.user.id);
+  user.subscriptions.push(req.params.id);
+  user.save();
+  return user;
+};
 
 export default {
   getMyEvents,
@@ -133,4 +182,5 @@ export default {
   deleteUser,
   updateUser,
   getCompanyEvents,
+  subscriptionUser,
 };

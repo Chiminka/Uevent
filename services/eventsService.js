@@ -89,6 +89,7 @@ const getAllEvents = async (req) => {
   }
   return arr_event;
 };
+// если компания создала ивент - оповестить
 const createEvent = async (id, body, req, userID) => {
   const user = await User.findById(id);
   if (user.role !== "company") {
@@ -162,8 +163,31 @@ const createEvent = async (id, body, req, userID) => {
   });
 
   await newEvent.save();
+
+  const users = await User.find();
+  let arr_subs = [];
+  for (let i = 0; i < users.length; i++) {
+    if (users[i].subscriptions)
+      for (let j = 0; j < users[i].subscriptions.length; j++) {
+        if (users[i].subscriptions[j].toString() === user.id.toString()) {
+          arr_subs.push(users[i]);
+        }
+      }
+  }
+  if (arr_subs)
+    for (let i = 0; i < arr_subs.length; i++) {
+      const member = await User.findById(arr_subs[i].id);
+      const author = await User.findById(user.id);
+      mailTransport().sendMail({
+        from: author.email,
+        to: member.email,
+        subject: `Company ${author.full_name} created event "${newEvent.title}". Check it on the site`,
+      });
+    }
+
   return newEvent;
 };
+// если компания удалила ивент - оповестить
 const deleteEvent = async (req) => {
   // может только компания, которая создала
   const event = await Event.findById(req.params.id);
@@ -174,37 +198,56 @@ const deleteEvent = async (req) => {
   const user = await User.findById(req.user.id);
   const tickets = await Ticket.find({ event: eventID });
 
-  if (tickets.length > 0) {
-    const members = [];
-    for (let i = 0; i < tickets.length; i++) {
-      members.push(tickets[i].user);
-      await Ticket.findByIdAndDelete(tickets[i]);
+  if (req.user._id.equals(event.author) && user.role === "company") {
+    const users = await User.find();
+    let arr_subs = [];
+    for (let i = 0; i < users.length; i++) {
+      if (users[i].subscriptions)
+        for (let j = 0; j < users[i].subscriptions.length; j++) {
+          if (users[i].subscriptions[j].toString() === user.id.toString()) {
+            arr_subs.push(users[i]);
+          }
+        }
     }
-    console.log(members);
-    for (let i = 0; i < members.length; i++) {
-      const member = await User.findById(members[i]);
-      const author = await User.findById(event.author);
-      mailTransport().sendMail({
-        from: author.email,
-        to: member.email,
-        subject: `Event "${event.title}" was deleted by organizer`,
-      });
-    }
-    if (req.user._id.equals(event.author) && user.role === "company") {
+    if (arr_subs)
+      for (let i = 0; i < arr_subs.length; i++) {
+        const member = await User.findById(arr_subs[i].id);
+        const author = await User.findById(user.id);
+        mailTransport().sendMail({
+          from: author.email,
+          to: member.email,
+          subject: `Company ${author.full_name} deleted event "${event.title}". Check it on the site`,
+        });
+      }
+    if (tickets.length > 0) {
+      const members = [];
+      for (let i = 0; i < tickets.length; i++) {
+        members.push(tickets[i].user);
+        await Ticket.findByIdAndDelete(tickets[i]);
+      }
+      console.log(members);
+      for (let i = 0; i < members.length; i++) {
+        const member = await User.findById(members[i]);
+        const author = await User.findById(event.author);
+        mailTransport().sendMail({
+          from: author.email,
+          to: member.email,
+          subject: `Event "${event.title}" was deleted by organizer`,
+        });
+      }
       await Event.findByIdAndDelete(req.params.id);
       return {
         message: "Event was deleted and members were warned",
       };
-    } else return { message: "No access!" };
-  } else {
-    if (req.user._id.equals(event.author) && user.role === "company") {
+    } else {
       await Event.findByIdAndDelete(req.params.id);
       return {
         message: "Event was deleted",
       };
-    } else return { message: "No access!" };
-  }
+    }
+  } else return { message: "No access!" };
 };
+// если компания изменила ивент - оповестить
 const updateEvent = async (req) => {
   // может только компания, которая создала
   let {
@@ -229,6 +272,27 @@ const updateEvent = async (req) => {
 
   if (req.user._id.equals(event.author) && user.role === "company") {
     const all_tickets = await Ticket.find({ event: eventId });
+
+    const users = await User.find();
+    let arr_subs = [];
+    for (let i = 0; i < users.length; i++) {
+      if (users[i].subscriptions)
+        for (let j = 0; j < users[i].subscriptions.length; j++) {
+          if (users[i].subscriptions[j].toString() === user.id.toString()) {
+            arr_subs.push(users[i]);
+          }
+        }
+    }
+    if (arr_subs)
+      for (let i = 0; i < arr_subs.length; i++) {
+        const member = await User.findById(arr_subs[i].id);
+        const author = await User.findById(user.id);
+        mailTransport().sendMail({
+          from: author.email,
+          to: member.email,
+          subject: `Company ${author.full_name} changed event "${event.title}". Check it on the site`,
+        });
+      }
 
     if (all_tickets)
       for (let i = 0; i < all_tickets.length; i++) {
@@ -280,32 +344,13 @@ const updateEvent = async (req) => {
     return event;
   } else return { message: "No access!" };
 };
-const payment = async (req) => {
+const payment = async (req, res) => {
   const user = await User.findById(req.user.id);
-  // тут нужно проверять промо код, если есть, то давать скидку на 4%
-  const line_items = req.body.cartItems.map((item) => {
-    const event = Event.findById(item.id);
-    if (user.my_promo_codes.length > 0) {
-      for (let i = 0; i < user.my_promo_codes.length; i++) {
-        if (user.my_promo_codes[i] === event.promo_code) {
-          let price = item.price - (item.price / 100) * 4;
-          return {
-            price_data: {
-              currency: "usd",
-              product_data: {
-                name: item.title,
-                images: [item.img],
-                description: item.description,
-                date: item.date_event,
-                metadata: {
-                  id: item.id,
-                },
-              },
-              unit_amount: price * 100,
-            },
-          };
-        }
-      }
+  const line_items = req.body.cartItems.map(async (item) => {
+    const event = await Event.findById(item.id);
+    let price = item.price;
+    if (event.promo_code && user.my_promo_codes.includes(event.promo_code)) {
+      price = price - (price / 100) * 4;
     }
     return {
       price_data: {
@@ -319,7 +364,7 @@ const payment = async (req) => {
             id: item.id,
           },
         },
-        unit_amount: item.price * 100,
+        unit_amount: price * 100,
       },
     };
   });

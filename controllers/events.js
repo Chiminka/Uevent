@@ -59,7 +59,7 @@ export class EventController {
   }
   async payment(req, res) {
     try {
-      const payment = await eventService.payment(req);
+      const payment = await eventService.payment(req, res);
       res.json(payment);
     } catch (error) {
       console.log(error);

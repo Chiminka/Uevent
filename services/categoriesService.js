@@ -5,12 +5,10 @@ const allCategories = async () => {
   const categories = await Category.find();
   return categories;
 };
-
 const byId = async (id) => {
   const category = await Category.findById(id);
   return category;
 };
-
 const categoryEvents = async (id) => {
   const category = await Category.findById(id);
   const categoryId = category.id;

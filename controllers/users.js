@@ -36,6 +36,15 @@ export class UserController {
       res.json({ message: "Updating user error" });
     }
   }
+  async subscriptionUser(req, res) {
+    try {
+      const subscriptionUser = await userService.subscriptionUser(req);
+      res.json(subscriptionUser);
+    } catch (error) {
+      console.log(error);
+      res.json({ message: "Updating user error" });
+    }
+  }
   async getCompanyEvents(req, res) {
     try {
       const getCompanyEvents = await userService.getCompanyEvents(req);
