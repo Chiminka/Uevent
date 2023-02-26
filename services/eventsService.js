@@ -204,7 +204,11 @@ const deleteEvent = async (req) => {
     for (let i = 0; i < users.length; i++) {
       if (users[i].subscriptions)
         for (let j = 0; j < users[i].subscriptions.length; j++) {
-          if (users[i].subscriptions[j].toString() === user.id.toString()) {
+          if (
+            (users[i].subscriptions[j].toString() === user.id.toString() ||
+              users[i].subscriptions[j].toString() === event.id.toString()) &&
+            !arr_subs.includes(users[i])
+          ) {
             arr_subs.push(users[i]);
           }
         }
@@ -278,7 +282,11 @@ const updateEvent = async (req) => {
     for (let i = 0; i < users.length; i++) {
       if (users[i].subscriptions)
         for (let j = 0; j < users[i].subscriptions.length; j++) {
-          if (users[i].subscriptions[j].toString() === user.id.toString()) {
+          if (
+            (users[i].subscriptions[j].toString() === user.id.toString() ||
+              users[i].subscriptions[j].toString() === event.id.toString()) &&
+            !arr_subs.includes(users[i])
+          ) {
             arr_subs.push(users[i]);
           }
         }
@@ -378,7 +386,7 @@ const payment = async (req, res) => {
 };
 const after_buying_action = async (req) => {
   const user = await User.findById(req.user.id);
-  let { visible, seat } = req.body;
+  let { visible, seat, reminder } = req.body;
   const event = await Event.findById(req.params.id);
 
   const month = event.date_event.getDate();
@@ -412,6 +420,7 @@ const after_buying_action = async (req) => {
   // here made a ticket
   const newTicket = new Ticket({
     visible,
+    reminder,
     seat,
     user: req.user.id,
     event: req.params.id,

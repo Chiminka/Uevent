@@ -13,5 +13,9 @@ const TicketSchema = new mongoose.Schema({
     type: String,
     default: "yes",
   },
+  remind: {
+    type: Boolean,
+    default: "false",
+  },
 });
 export default mongoose.model("Ticket", TicketSchema);
