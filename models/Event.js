@@ -46,8 +46,8 @@ const EventSchema = new mongoose.Schema({
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQw-ByquDvpBITEAHnGNeqUyQGw7KX3gqz3A5vQyICAV67mzUB2G8HECVilUr521eXJx04&usqp=CAU",
   },
   notifications: {
-    type: String,
-    default: "no",
+    type: Boolean,
+    default: false,
   },
   members_visibles: {
     type: String,

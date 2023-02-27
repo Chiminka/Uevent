@@ -388,6 +388,7 @@ const after_buying_action = async (req) => {
   const user = await User.findById(req.user.id);
   let { visible, seat, reminder } = req.body;
   const event = await Event.findById(req.params.id);
+  const company = await User.findById(event.author);
 
   const month = event.date_event.getDate();
   const day = event.date_event.getDay();
@@ -398,7 +399,7 @@ const after_buying_action = async (req) => {
   // после оплаты отправляются билеты по почте и добавляется юзер в мемберы ивента, юзеру зачисляется какой-то промокод со скидкой, -1 билет в счетчике билетов ивента
   if (seat) {
     mailTransport().sendMail({
-      from: process.env.USER,
+      from: company.email,
       to: user.email,
       subject: `Your tickets from "Afisha"`,
       html: `<h1>${user.full_name} bought tickets from "Afisha" on ${event.title}</h1>
@@ -408,9 +409,20 @@ const after_buying_action = async (req) => {
     });
   } else if (!seat) {
     mailTransport().sendMail({
-      from: process.env.USER,
+      from: company.email,
       to: user.email,
       subject: `Your tickets from "Afisha"`,
+      html: `<h1>${user.full_name} bought tickets from "Afisha" on ${event.title}</h1>
+        <h2>Starts at ${date}</h2>
+        <h2>Address: ${event.location}</h2>
+        <h1>Was paid: ${event.price}</h1>`,
+    });
+  }
+  if (event.notifications === true) {
+    mailTransport().sendMail({
+      from: process.env.USER,
+      to: company.email,
+      subject: `The new member on your event from "Afisha"`,
       html: `<h1>${user.full_name} bought tickets from "Afisha" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location}</h2>
