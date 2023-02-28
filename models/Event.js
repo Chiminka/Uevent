@@ -19,7 +19,7 @@ const EventSchema = new mongoose.Schema({
   },
   author: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "Company",
     required: true,
   },
   price: {

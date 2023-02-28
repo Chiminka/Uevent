@@ -6,7 +6,7 @@ const authController = new AuthController();
 
 const router = new Router();
 
-// Register +
+// Register ?
 // http://localhost:3002/api/auth/register
 router.post("/register", authController.register);
 

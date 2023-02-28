@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import schedule from "node-schedule";
 import Ticket from "../models/Ticket.js";
 import mailTransport from "../utils/mailTransport.js";
+import Company from "../models/Company.js";
 
 export const post_it_now = async () => {
   let date_post = "";
@@ -12,10 +13,11 @@ export const post_it_now = async () => {
 
     for (let i = 0; i < event.length; i++) {
       if (event[i].visible === "yes") {
+        date.setDate(date.getDate() + 1); // установить следующий день
         let date_remaind = [
           date.getFullYear(),
           date.getMonth() + 1,
-          date.getDate() + 1,
+          date.getDate(),
         ].join("-");
         if (
           [
@@ -24,23 +26,23 @@ export const post_it_now = async () => {
             event[i].date_event.getDate(),
           ].join("-") === date_remaind
         ) {
-          const user_author = await User.findById(event[i].author);
+          const author = await Company.findById(event[i].author);
           let this_event = event[i]._id;
           const tickets = await Ticket.find();
-          for (let i = 0; i < tickets.length; i++) {
+          for (let j = 0; j < tickets.length; j++) {
             if (
-              tickets[i].event.toString() === this_event.toString() &&
-              tickets[i].remind === false
+              tickets[j].event.toString() === this_event.toString() &&
+              tickets[j].remind === false
             ) {
-              const user = await User.findById(tickets[i].user);
+              const user = await User.findById(tickets[j].user);
               mailTransport().sendMail({
-                from: user_author.email,
+                from: author.email,
                 to: user.email,
-                subject: `Reminder: event ${event[i].name} starts tomorrow`,
-                html: `<h1>Your event ${event[i].name} starts tomorrow</h1>`,
+                subject: `Reminder: event ${event[i].title} starts tomorrow`,
+                html: `<h1>Your event ${event[i].title} starts tomorrow</h1>`,
               });
-              tickets[i].remind = true;
-              tickets[i].save();
+              tickets[j].remind = true;
+              tickets[j].save();
             }
           }
         }

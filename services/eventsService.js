@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Category from "../models/Category.js";
 import Comment from "../models/Comment.js";
 import Ticket from "../models/Ticket.js";
+import Company from "../models/Company.js";
 
 import promo from "../utils/create_promo.js";
 import { format_sort, themes_sort, date_sort } from "../utils/sorting.js";
@@ -51,7 +52,9 @@ const getEventById = async (id, userID) => {
         if (userID.toString() === tickets[i].user.toString()) {
           if (ticket.visible === "yes") {
             let user = await User.findById(ticket.user);
-            members.push(user);
+            if (!members.some((m) => m.id === user.id)) {
+              members.push(user);
+            }
           }
         }
       }
@@ -90,9 +93,11 @@ const getAllEvents = async (req) => {
   return arr_event;
 };
 // если компания создала ивент - оповестить
-const createEvent = async (id, body, req, userID) => {
-  const user = await User.findById(id);
-  if (user.role !== "company") {
+const createEvent = async (req) => {
+  const company = await Company.findById(req.params.id);
+  const user = await User.findById(req.user.id);
+
+  if (!user.companies.includes(company.id) || !company.verified) {
     return { message: "Access denied" };
   }
 
@@ -107,7 +112,7 @@ const createEvent = async (id, body, req, userID) => {
     categories,
     location,
     members_visibles,
-  } = body;
+  } = req.body;
 
   if (
     !title ||
@@ -159,7 +164,7 @@ const createEvent = async (id, body, req, userID) => {
     img: fileName,
     members_visibles,
     promo_code: promo(),
-    author: userID,
+    author: company.id,
   });
 
   await newEvent.save();
@@ -169,7 +174,7 @@ const createEvent = async (id, body, req, userID) => {
   for (let i = 0; i < users.length; i++) {
     if (users[i].subscriptions)
       for (let j = 0; j < users[i].subscriptions.length; j++) {
-        if (users[i].subscriptions[j].toString() === user.id.toString()) {
+        if (users[i].subscriptions[j].toString() === company.id.toString()) {
           arr_subs.push(users[i]);
         }
       }
@@ -177,11 +182,10 @@ const createEvent = async (id, body, req, userID) => {
   if (arr_subs)
     for (let i = 0; i < arr_subs.length; i++) {
       const member = await User.findById(arr_subs[i].id);
-      const author = await User.findById(user.id);
       mailTransport().sendMail({
-        from: author.email,
+        from: company.email,
         to: member.email,
-        subject: `Company ${author.full_name} created event "${newEvent.title}". Check it on the site`,
+        subject: `Company ${company.company_name} created event "${newEvent.title}". Check it on the site`,
       });
     }
 
@@ -190,22 +194,24 @@ const createEvent = async (id, body, req, userID) => {
 // если компания удалила ивент - оповестить
 const deleteEvent = async (req) => {
   // может только компания, которая создала
-  const event = await Event.findById(req.params.id);
+
+  const event = await Event.findById(req.params.eventId);
   if (event === null) {
     return "this event doesn't exist";
   }
   const eventID = event.id;
   const user = await User.findById(req.user.id);
   const tickets = await Ticket.find({ event: eventID });
+  const company = await Company.findById(req.params.companyId);
 
-  if (req.user._id.equals(event.author) && user.role === "company") {
+  if (user.companies.includes(company.id)) {
     const users = await User.find();
     let arr_subs = [];
     for (let i = 0; i < users.length; i++) {
       if (users[i].subscriptions)
         for (let j = 0; j < users[i].subscriptions.length; j++) {
           if (
-            (users[i].subscriptions[j].toString() === user.id.toString() ||
+            (users[i].subscriptions[j].toString() === company.id.toString() ||
               users[i].subscriptions[j].toString() === event.id.toString()) &&
             !arr_subs.includes(users[i])
           ) {
@@ -216,11 +222,10 @@ const deleteEvent = async (req) => {
     if (arr_subs)
       for (let i = 0; i < arr_subs.length; i++) {
         const member = await User.findById(arr_subs[i].id);
-        const author = await User.findById(user.id);
         mailTransport().sendMail({
-          from: author.email,
+          from: company.email,
           to: member.email,
-          subject: `Company ${author.full_name} deleted event "${event.title}". Check it on the site`,
+          subject: `Company ${company.company_name} deleted event "${event.title}". Check it on the site`,
         });
       }
     if (tickets.length > 0) {
@@ -232,19 +237,19 @@ const deleteEvent = async (req) => {
       console.log(members);
       for (let i = 0; i < members.length; i++) {
         const member = await User.findById(members[i]);
-        const author = await User.findById(event.author);
+        const author = await Company.findById(event.author);
         mailTransport().sendMail({
           from: author.email,
           to: member.email,
           subject: `Event "${event.title}" was deleted by organizer`,
         });
       }
-      await Event.findByIdAndDelete(req.params.id);
+      await Event.findByIdAndDelete(req.params.eventId);
       return {
         message: "Event was deleted and members were warned",
       };
     } else {
-      await Event.findByIdAndDelete(req.params.id);
+      await Event.findByIdAndDelete(req.params.eventId);
       return {
         message: "Event was deleted",
       };
@@ -267,14 +272,17 @@ const updateEvent = async (req) => {
     members_visibles,
   } = req.body;
 
-  const event = await Event.findById(req.params.id);
+  if (!req.params.companyId) return "Provide an id of event company";
+
+  const company = await Company.findById(req.params.companyId);
+  const event = await Event.findById(req.params.eventId);
   if (event === null) {
     return "this event doesn't exist";
   }
   const eventId = event.id;
   const user = await User.findById(req.user.id);
 
-  if (req.user._id.equals(event.author) && user.role === "company") {
+  if (user.companies.includes(company.id)) {
     const all_tickets = await Ticket.find({ event: eventId });
 
     const users = await User.find();
@@ -283,7 +291,7 @@ const updateEvent = async (req) => {
       if (users[i].subscriptions)
         for (let j = 0; j < users[i].subscriptions.length; j++) {
           if (
-            (users[i].subscriptions[j].toString() === user.id.toString() ||
+            (users[i].subscriptions[j].toString() === company.id.toString() ||
               users[i].subscriptions[j].toString() === event.id.toString()) &&
             !arr_subs.includes(users[i])
           ) {
@@ -291,21 +299,21 @@ const updateEvent = async (req) => {
           }
         }
     }
+    console.log(arr_subs);
     if (arr_subs)
       for (let i = 0; i < arr_subs.length; i++) {
         const member = await User.findById(arr_subs[i].id);
-        const author = await User.findById(user.id);
         mailTransport().sendMail({
-          from: author.email,
+          from: company.email,
           to: member.email,
-          subject: `Company ${author.full_name} changed event "${event.title}". Check it on the site`,
+          subject: `Company ${company.company_name} changed event "${event.title}". Check it on the site`,
         });
       }
 
-    if (all_tickets)
+    if (!arr_subs && all_tickets)
       for (let i = 0; i < all_tickets.length; i++) {
         const member = await User.findById(all_tickets[i].user);
-        const author = await User.findById(event.author);
+        const author = await Company.findById(event.author);
         mailTransport().sendMail({
           from: author.email,
           to: member.email,
@@ -359,6 +367,8 @@ const payment = async (req, res) => {
     let price = item.price;
     if (event.promo_code && user.my_promo_codes.includes(event.promo_code)) {
       price = price - (price / 100) * 4;
+      // тут нужно удалить из массива этот промо код
+      user.updateOne({ $pull: { my_promo_codes: event.promo_code } });
     }
     return {
       price_data: {
@@ -388,14 +398,17 @@ const after_buying_action = async (req) => {
   const user = await User.findById(req.user.id);
   let { visible, seat, reminder } = req.body;
   const event = await Event.findById(req.params.id);
-  const company = await User.findById(event.author);
+  const company = await Company.findById(event.author);
 
-  const month = event.date_event.getDate();
-  const day = event.date_event.getDay();
-  const year = event.date_event.getFullYear();
-  const hour = event.date_event.getHours();
-  const minutes = event.date_event.getMinutes();
-  const date = `${day}.${month}.${year} ${hour}:${minutes}`;
+  const options = {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  };
+  const date = event.date_event.toLocaleString("ru-RU", options);
+
   // после оплаты отправляются билеты по почте и добавляется юзер в мемберы ивента, юзеру зачисляется какой-то промокод со скидкой, -1 билет в счетчике билетов ивента
   if (seat) {
     mailTransport().sendMail({
@@ -449,7 +462,7 @@ const after_buying_action = async (req) => {
   }
   // Получаем случайный ключ массива
   var rand = Math.floor(Math.random() * arr.length);
-  user.my_promo_codes = arr[rand];
+  user.my_promo_codes.push(arr[rand]);
 
   await user.save();
   await event.save();

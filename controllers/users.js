@@ -1,14 +1,6 @@
 import userService from "../services/usersService.js";
 
 export class UserController {
-  async getMyEvents(req, res) {
-    try {
-      const getMyEvents = await userService.getMyEvents(req);
-      res.json(getMyEvents);
-    } catch (error) {
-      res.json({ message: "Getting events error" });
-    }
-  }
   async getMyTickets(req, res) {
     try {
       const getMyTickets = await userService.getMyTickets(req);
@@ -43,14 +35,6 @@ export class UserController {
     } catch (error) {
       console.log(error);
       res.json({ message: "Updating user error" });
-    }
-  }
-  async getCompanyEvents(req, res) {
-    try {
-      const getCompanyEvents = await userService.getCompanyEvents(req);
-      res.json(getCompanyEvents);
-    } catch (error) {
-      res.json({ message: "Getting events error" });
     }
   }
 }

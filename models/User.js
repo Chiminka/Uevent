@@ -20,10 +20,6 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
-  role: {
-    type: String,
-    default: "user",
-  },
   email: {
     type: String,
     required: true,
@@ -38,15 +34,17 @@ const UserSchema = new mongoose.Schema({
     required: true,
     default: false,
   },
-  location: {
-    type: String,
-    default: "",
-  },
   subscriptions: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: "",
+      default: [],
+    },
+  ],
+  companies: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      default: [],
     },
   ],
 });

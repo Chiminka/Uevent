@@ -5,15 +5,7 @@ import mailTransport from "../utils/mailTransport.js";
 import asyncHandler from "express-async-handler";
 
 const register = async (userData, fileName) => {
-  const {
-    username,
-    full_name,
-    password,
-    email,
-    repeatPassword,
-    role,
-    location,
-  } = userData;
+  const { username, full_name, password, email, repeatPassword } = userData;
 
   if (!username || !password || !email || !repeatPassword)
     return { message: "Content can not be empty" };
@@ -53,8 +45,6 @@ const register = async (userData, fileName) => {
 
     const newUser = new User({
       full_name,
-      role,
-      location,
       username,
       password: hash,
       email,

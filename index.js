@@ -6,6 +6,7 @@ import fileUpload from "express-fileupload";
 import cookieParser from "cookie-parser";
 
 import authRoute from "./routes/auth.js";
+import companyRoute from "./routes/companies.js";
 import usersRoute from "./routes/users.js";
 import eventRoute from "./routes/events.js";
 import { post_it_now } from "./utils/post_it_now.js";
@@ -40,6 +41,7 @@ app.use("/api/users", usersRoute);
 app.use("/api/events", eventRoute);
 app.use("/api/comments", commentRoute);
 app.use("/api/categories", categoryRoute);
+app.use("/api/companies", companyRoute);
 // app.use("/api/stripe", stripe);
 
 async function start() {

@@ -27,12 +27,7 @@ export class EventController {
   async createEvent(req, res) {
     // может только компания
     try {
-      const createEvent = await eventService.createEvent(
-        req.user.id,
-        req.body,
-        req,
-        req.user.id
-      );
+      const createEvent = await eventService.createEvent(req);
       res.json(createEvent);
     } catch (error) {
       console.log(error);

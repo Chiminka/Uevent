@@ -15,16 +15,16 @@ router.get("/:id", verifyUser, eventController.getEventById);
 router.get("/", eventController.getAllEvents);
 
 // Create new event +
-// http://localhost:3002/api/events
-router.post("/", verifyJWT, eventController.createEvent);
+// http://localhost:3002/api/events/company/:id
+router.post("/company/:id", verifyJWT, eventController.createEvent);
 
 // Delete event by id +
-// http://localhost:3002/api/events/:id
-router.delete("/:id", verifyJWT, eventController.deleteEvent);
+// http://localhost:3002/api/events/:eventId/:companyId
+router.delete("/:eventId/:companyId", verifyJWT, eventController.deleteEvent);
 
 // Update event by id +
-// http://localhost:3002/api/events/:id
-router.patch("/:id", verifyJWT, eventController.updateEvent);
+// http://localhost:3002/api/events/:eventId/:companyId
+router.patch("/:eventId/:companyId", verifyJWT, eventController.updateEvent);
 
 // Send tickets on the mail, add to members after buying and get promo code +
 // http://localhost:3002/api/events/:id/after-the-payment
