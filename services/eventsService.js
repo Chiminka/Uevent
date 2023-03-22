@@ -4,6 +4,7 @@ import Category from "../models/Category.js";
 import Comment from "../models/Comment.js";
 import Ticket from "../models/Ticket.js";
 import Company from "../models/Company.js";
+import Promocode from "../models/Promocode.js";
 
 import promo from "../utils/create_promo.js";
 import { format_sort, themes_sort, date_sort } from "../utils/sorting.js";
@@ -151,6 +152,7 @@ const createEvent = async (req) => {
     date_post = new Date();
     date_post.setSeconds(date_post.getSeconds() + 70);
   }
+
   const newEvent = new Event({
     notifications,
     title,
@@ -163,11 +165,25 @@ const createEvent = async (req) => {
     categories: categories,
     img: fileName,
     members_visibles,
-    promo_code: promo(),
     author: company.id,
   });
 
   await newEvent.save();
+
+  // создаем новый объект Date с текущей датой и временем
+  var currentDate = new Date();
+
+  // добавляем 3 недели к текущей дате
+  var futureDate = new Date(currentDate.getTime() + 21 * 24 * 60 * 60 * 1000);
+  console.log(futureDate);
+
+  const newPromo = new Promocode({
+    event: newEvent.id,
+    promo_code: promo(),
+    expiration_date: futureDate,
+  });
+
+  await newPromo.save();
 
   const users = await User.find();
   let arr_subs = [];
@@ -245,11 +261,13 @@ const deleteEvent = async (req) => {
         });
       }
       await Event.findByIdAndDelete(req.params.eventId);
+      await Promocode.findOneAndDelete({ event: req.params.eventId });
       return {
         message: "Event was deleted and members were warned",
       };
     } else {
       await Event.findByIdAndDelete(req.params.eventId);
+      await Promocode.findOneAndDelete({ event: req.params.eventId });
       return {
         message: "Event was deleted",
       };
@@ -361,31 +379,37 @@ const updateEvent = async (req) => {
   } else return { message: "No access!" };
 };
 const payment = async (req, res) => {
-  const user = await User.findById(req.user.id);
-  const line_items = req.body.cartItems.map(async (item) => {
-    const event = await Event.findById(item.id);
-    let price = item.price;
-    if (event.promo_code && user.my_promo_codes.includes(event.promo_code)) {
-      price = price - (price / 100) * 4;
-      // тут нужно удалить из массива этот промо код
-      user.updateOne({ $pull: { my_promo_codes: event.promo_code } });
-    }
-    return {
-      price_data: {
-        currency: "usd",
-        product_data: {
-          name: item.title,
-          images: [item.img],
-          description: item.description,
-          date: item.date_event,
-          metadata: {
-            id: item.id,
+  const line_items = await Promise.all(
+    req.body.cartItems.map(async (item) => {
+      const promo = await Promocode.find({
+        users: req.user.id,
+        event: item.id,
+      });
+      let price = item.price;
+      if (promo) {
+        price = price - (price / 100) * 4;
+        await Promocode.updateOne(
+          { _id: promo._id },
+          { $pull: { users: req.user.id } }
+        );
+      }
+      return {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: item.title,
+            images: [item.img],
+            description: item.description,
+            date: item.date_event,
+            metadata: {
+              id: item.id,
+            },
           },
+          unit_amount: price * 100,
         },
-        unit_amount: price * 100,
-      },
-    };
-  });
+      };
+    })
+  );
   const session = await stripe.checkout.sessions.create({
     line_items,
     mode: "payment",
@@ -396,9 +420,7 @@ const payment = async (req, res) => {
 };
 const after_buying_action = async (req) => {
   const user = await User.findById(req.user.id);
-  let { visible, seat, reminder } = req.body;
-  const event = await Event.findById(req.params.id);
-  const company = await Company.findById(event.author);
+  let { visible, remind, bought_events } = req.body;
 
   const options = {
     day: "2-digit",
@@ -407,20 +429,14 @@ const after_buying_action = async (req) => {
     hour: "2-digit",
     minute: "2-digit",
   };
-  const date = event.date_event.toLocaleString("ru-RU", options);
 
-  // после оплаты отправляются билеты по почте и добавляется юзер в мемберы ивента, юзеру зачисляется какой-то промокод со скидкой, -1 билет в счетчике билетов ивента
-  if (seat) {
-    mailTransport().sendMail({
-      from: company.email,
-      to: user.email,
-      subject: `Your tickets from "Afisha"`,
-      html: `<h1>${user.full_name} bought tickets from "Afisha" on ${event.title}</h1>
-        <h2>Starts at ${date}</h2>
-        <h2>Address: ${event.location}. Seat is ${seat}</h2>
-        <h1>Was paid: ${event.price}</h1>`,
-    });
-  } else if (!seat) {
+  for (let i = 0; i < bought_events.length; i++) {
+    const event = await Event.findById(bought_events[i]);
+    const company = await Company.findById(event.author);
+
+    const date = event.date_event.toLocaleString("ru-RU", options);
+
+    // после оплаты отправляются билеты по почте и добавляется юзер в мемберы ивента, юзеру зачисляется какой-то промокод со скидкой, -1 билет в счетчике билетов ивента
     mailTransport().sendMail({
       from: company.email,
       to: user.email,
@@ -430,42 +446,44 @@ const after_buying_action = async (req) => {
         <h2>Address: ${event.location}</h2>
         <h1>Was paid: ${event.price}</h1>`,
     });
-  }
-  if (event.notifications === true) {
-    mailTransport().sendMail({
-      from: process.env.USER,
-      to: company.email,
-      subject: `The new member on your event from "Afisha"`,
-      html: `<h1>${user.full_name} bought tickets from "Afisha" on ${event.title}</h1>
+
+    if (event.notifications === true) {
+      mailTransport().sendMail({
+        from: process.env.USER,
+        to: company.email,
+        subject: `The new member on your event from "Afisha"`,
+        html: `<h1>${user.full_name} bought tickets from "Afisha" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location}</h2>
         <h1>Was paid: ${event.price}</h1>`,
-    });
-  }
-  // here made a ticket
-  const newTicket = new Ticket({
-    visible,
-    reminder,
-    seat,
-    user: req.user.id,
-    event: req.params.id,
-  });
-  await newTicket.save();
+      });
+    }
 
-  event.tickets = event.tickets - 1;
+    event.tickets = event.tickets - 1;
+    await event.save();
+
+    // here made a ticket
+    const newTicket = new Ticket({
+      visible,
+      remind,
+      user: req.user.id,
+      event: event.id,
+    });
+    await newTicket.save();
+  }
 
   // Определяем массив
-  const events = await Event.find();
+  let promo = await Promocode.find();
   let arr = [];
-  for (let i = 0; i < events.length; i++) {
-    arr.push(events[i].promo_code);
+  for (let i = 0; i < promo.length; i++) {
+    arr.push(promo[i].id);
   }
   // Получаем случайный ключ массива
   var rand = Math.floor(Math.random() * arr.length);
-  user.my_promo_codes.push(arr[rand]);
 
-  await user.save();
-  await event.save();
+  promo = await Promocode.findById(arr[rand]);
+  promo.users.push(req.user.id);
+  promo.save();
   return { message: "Tickets were sent on your email" };
 };
 const createComment = async (req) => {

@@ -6,9 +6,6 @@ const TicketSchema = new mongoose.Schema({
     ref: "User",
   },
   event: { type: mongoose.Schema.Types.ObjectId, ref: "Event", required: true },
-  seat: {
-    type: String,
-  },
   visible: {
     type: String,
     default: "yes",

@@ -27,9 +27,9 @@ router.delete("/:eventId/:companyId", verifyJWT, eventController.deleteEvent);
 router.patch("/:eventId/:companyId", verifyJWT, eventController.updateEvent);
 
 // Send tickets on the mail, add to members after buying and get promo code +
-// http://localhost:3002/api/events/:id/after-the-payment
+// http://localhost:3002/api/events/after-the-payment
 router.post(
-  "/:id/after-the-payment",
+  "/after-the-payment",
   verifyJWT,
   eventController.after_buying_action
 );

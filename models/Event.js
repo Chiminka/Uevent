@@ -53,10 +53,6 @@ const EventSchema = new mongoose.Schema({
     type: String,
     default: "everyone",
   },
-  promo_code: {
-    type: String,
-    default: "",
-  },
   visible: {
     type: String,
     default: "no",

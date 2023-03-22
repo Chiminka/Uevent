@@ -5,20 +5,24 @@ import Ticket from "../models/Ticket.js";
 import mailTransport from "../utils/mailTransport.js";
 import Company from "../models/Company.js";
 
+import { check_promocode } from "./check_promocode.js";
+
 export const post_it_now = async () => {
   let date_post = "";
   schedule.scheduleJob("*/1 * * * 0-6", async () => {
     const event = await Event.find();
-    const date = new Date();
+    let date = new Date();
+    date.setDate(date.getDate() + 1); // установить следующий день
+    const date_remaind = [
+      date.getFullYear(),
+      date.getMonth() + 1,
+      date.getDate(),
+    ].join("-");
+
+    check_promocode();
 
     for (let i = 0; i < event.length; i++) {
       if (event[i].visible === "yes") {
-        date.setDate(date.getDate() + 1); // установить следующий день
-        let date_remaind = [
-          date.getFullYear(),
-          date.getMonth() + 1,
-          date.getDate(),
-        ].join("-");
         if (
           [
             event[i].date_event.getFullYear(),
@@ -49,6 +53,7 @@ export const post_it_now = async () => {
       }
 
       if (event[i].visible === "no") {
+        date.setDate(date.getDate() - 1); // установить следующий день
         date_post = [
           date.getFullYear(),
           date.getMonth() + 1,
