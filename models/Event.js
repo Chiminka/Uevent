@@ -37,7 +37,7 @@ const EventSchema = new mongoose.Schema({
   categories: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Category",
     },
   ],
   img: {

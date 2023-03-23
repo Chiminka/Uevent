@@ -160,6 +160,10 @@ const createMyCompany = async (req) => {
     { expiresIn: "10m" }
   );
 
+  const user = await User.findById(req.user.id);
+  user.companies.push(newCompany.id);
+  user.save();
+
   // verification email
   const url = `${process.env.BASE_URL}verify/${v_token}`;
   mailTransport().sendMail({

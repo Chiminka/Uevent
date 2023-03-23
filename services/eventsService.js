@@ -67,6 +67,7 @@ const getEventById = async (id, userID) => {
 const getAllEvents = async (req) => {
   const { categoryType } = req.body;
   let event = "";
+
   switch (categoryType) {
     case "format": {
       const result = await format_sort();
@@ -86,6 +87,7 @@ const getAllEvents = async (req) => {
   }
 
   console.log(event); // здесь будет значение, возвращаемое промисом
+
   let arr_event = [];
   // здесь находятся ивенты, у которых есть еще билеты
   for (let i = 0; i < event.length; i++) {
@@ -297,6 +299,8 @@ const updateEvent = async (req) => {
   if (event === null) {
     return "this event doesn't exist";
   }
+
+  console.log(company);
   const eventId = event.id;
   const user = await User.findById(req.user.id);
 

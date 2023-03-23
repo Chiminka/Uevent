@@ -11,6 +11,7 @@ export const post_it_now = async () => {
   let date_post = "";
   schedule.scheduleJob("*/1 * * * 0-6", async () => {
     const event = await Event.find();
+
     let date = new Date();
     date.setDate(date.getDate() + 1); // установить следующий день
     const date_remaind = [
@@ -61,6 +62,12 @@ export const post_it_now = async () => {
           date.getUTCHours(),
           date.getMinutes(),
         ].join("-");
+
+        console.log(
+          new Date(date.toISOString()),
+          new Date(event[i].date_post.toISOString())
+        );
+
         if (
           [
             event[i].date_post.getFullYear(),
@@ -68,7 +75,9 @@ export const post_it_now = async () => {
             event[i].date_post.getDate(),
             event[i].date_post.getUTCHours(),
             event[i].date_post.getMinutes(),
-          ].join("-") === date_post
+          ].join("-") === date_post ||
+          new Date(date.toISOString()) >
+            new Date(event[i].date_post.toISOString())
         ) {
           event[i].visible = "yes";
           await event[i].save();

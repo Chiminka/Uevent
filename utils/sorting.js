@@ -6,8 +6,10 @@ const format_sort = async () => {
   const formatCategories = await Category.find({ type: "format" }).sort(
     "content"
   );
+
   // Получаем все мероприятия с категориями, включая категории с типом "format"
   const events = await Event.find({ visible: "yes" }).populate("categories");
+
   // Отбираем мероприятия с категориями, включая только те, которые имеют тип "format"
   const formatEvents = events.filter((event) =>
     event.categories.some((category) => category.type === "format")
@@ -30,6 +32,7 @@ const format_sort = async () => {
   nonFormatEvents.sort((a, b) => b.date_event - a.date_event);
   // Объединяем массивы отсортированных мероприятий
   const sortedEvents = formatEvents.concat(nonFormatEvents);
+
   // Возвращаем отсортированный массив мероприятий
   return sortedEvents;
 };
