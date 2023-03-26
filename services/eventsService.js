@@ -101,11 +101,15 @@ const createEvent = async (req) => {
   const user = await User.findById(req.user.id);
 
   if (!company) {
+    return { message: "No such a company" };
+  }
+
+  if (!user.companies.includes(company.id)) {
     return { message: "Access denied" };
   }
 
-  if (!user.companies.includes(company.id) || !company.verified) {
-    return { message: "Access denied" };
+  if (!company.verified) {
+    return { message: "Company is not verified" };
   }
 
   let {
