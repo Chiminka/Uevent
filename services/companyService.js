@@ -31,6 +31,10 @@ const deleteCompany = async (req, res) => {
       }
     await Company.findByIdAndDelete(req.params.id);
     const companyID = req.params.id;
+    await User.updateOne(
+      { companies: companyID },
+      { $pull: { companies: companyID } }
+    );
     const events = await Event.find({ author: companyID });
     for (let i = 0; i < events.length; i++) {
       await Event.findOneAndDelete({ author: events[i].author });

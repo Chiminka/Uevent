@@ -5,6 +5,7 @@ import mailTransport from "../utils/mailTransport.js";
 import { fileURLToPath } from "url";
 import path, { dirname } from "path";
 import Ticket from "../models/Ticket.js";
+import Company from "../models/Company.js";
 
 const getMyTickets = async (req) => {
   // получить все приобретенные билеты
@@ -14,6 +15,16 @@ const getMyTickets = async (req) => {
     if (tickets[i].user.toString() === req.user._id.toString()) {
       mas.push(tickets[i]);
     }
+  }
+  return mas;
+};
+const getMyCompanies = async (req) => {
+  // получить все компании
+  const user = await User.findById(req.user.id);
+  let mas = [];
+  for (let i = 0; i < user.companies.length; i++) {
+    let myCompanies = await Company.findById(user.companies[i]);
+    mas.push(myCompanies);
   }
   return mas;
 };
@@ -118,4 +129,5 @@ export default {
   deleteUser,
   updateUser,
   subscriptionUser,
+  getMyCompanies,
 };

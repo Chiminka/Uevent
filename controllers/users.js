@@ -10,6 +10,15 @@ export class UserController {
       res.json({ message: "Getting tickets error" });
     }
   }
+  async getMyCompanies(req, res) {
+    try {
+      const getMyCompanies = await userService.getMyCompanies(req);
+      res.json(getMyCompanies);
+    } catch (error) {
+      console.log(error);
+      res.json({ message: "Getting companies error" });
+    }
+  }
   async deleteUser(req, res) {
     try {
       const deleteUser = await userService.deleteUser(req, res);

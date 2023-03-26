@@ -100,6 +100,10 @@ const createEvent = async (req) => {
   const company = await Company.findById(req.params.id);
   const user = await User.findById(req.user.id);
 
+  if (!company) {
+    return { message: "Access denied" };
+  }
+
   if (!user.companies.includes(company.id) || !company.verified) {
     return { message: "Access denied" };
   }
