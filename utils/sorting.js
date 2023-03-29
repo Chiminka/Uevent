@@ -1,72 +1,55 @@
 import Event from "../models/Event.js";
-import Category from "../models/Category.js";
+import Theme from "../models/Theme.js";
+import Format from "../models/Format.js";
 
 const format_sort = async () => {
-  // Получаем все категории с типом "format" и сортируем их по содержимому категории
-  const formatCategories = await Category.find({ type: "format" }).sort(
-    "content"
-  );
+  // Получаем список всех ивентов из базы данных
+  const events = await Event.find();
 
-  // Получаем все мероприятия с категориями, включая категории с типом "format"
-  const events = await Event.find({ visible: "yes" }).populate("categories");
+  // Для каждого ивента получаем список форматов и сортируем его по контенту форматов
+  for (let i = 0; i < events.length; i++) {
+    const event = events[i];
+    const formats = await Format.find({ _id: { $in: event.formats } }).sort({
+      content: 1,
+    });
+    event.formats = formats;
+    const themes = await Theme.find({ _id: { $in: event.themes } });
+    event.themes = themes;
+  }
 
-  // Отбираем мероприятия с категориями, включая только те, которые имеют тип "format"
-  const formatEvents = events.filter((event) =>
-    event.categories.some((category) => category.type === "format")
-  );
-  // Сортируем мероприятия с категориями типа "format" по содержимому категории
-  formatEvents.sort((a, b) => {
-    const categoryA = a.categories.find(
-      (category) => category.type === "format"
-    );
-    const categoryB = b.categories.find(
-      (category) => category.type === "format"
-    );
-    return categoryA.content.localeCompare(categoryB.content);
+  // Отсортировываем ивенты по контенту форматов
+  events.sort((a, b) => {
+    const aContent = a.formats.length > 0 ? a.formats[0].content : "";
+    const bContent = b.formats.length > 0 ? b.formats[0].content : "";
+    return aContent.localeCompare(bContent);
   });
-  // Отбираем мероприятия с категориями, не включающими категории типа "format"
-  const nonFormatEvents = events.filter((event) =>
-    event.categories.every((category) => category.type !== "format")
-  );
-  // Сортируем мероприятия с категориями, не включающими категории типа "format" по дате
-  nonFormatEvents.sort((a, b) => b.date_event - a.date_event);
-  // Объединяем массивы отсортированных мероприятий
-  const sortedEvents = formatEvents.concat(nonFormatEvents);
 
-  // Возвращаем отсортированный массив мероприятий
-  return sortedEvents;
+  return events;
 };
+
 const themes_sort = async () => {
-  // Получаем все категории с типом "themes" и сортируем их по содержимому категории
-  const themesCategories = await Category.find({ type: "themes" }).sort(
-    "content"
-  );
-  // Получаем все мероприятия с категориями, включая категории с типом "themes"
-  const events = await Event.find({ visible: "yes" }).populate("categories");
-  // Отбираем мероприятия с категориями, включая только те, которые имеют тип "themes"
-  const themesEvents = events.filter((event) =>
-    event.categories.some((category) => category.type === "themes")
-  );
-  // Сортируем мероприятия с категориями типа "themes" по содержимому категории
-  themesEvents.sort((a, b) => {
-    const categoryA = a.categories.find(
-      (category) => category.type === "themes"
-    );
-    const categoryB = b.categories.find(
-      (category) => category.type === "themes"
-    );
-    return categoryA.content.localeCompare(categoryB.content);
+  // Получаем список всех ивентов из базы данных
+  const events = await Event.find();
+
+  // Для каждого ивента получаем список тематик и сортируем его по контенту тематик
+  for (let i = 0; i < events.length; i++) {
+    const event = events[i];
+    const themes = await Theme.find({ _id: { $in: event.themes } }).sort({
+      content: 1,
+    });
+    event.themes = themes;
+    const formats = await Format.find({ _id: { $in: event.formats } });
+    event.formats = formats;
+  }
+
+  // Отсортировываем ивенты по контенту тематик
+  events.sort((a, b) => {
+    const aContent = a.themes.length > 0 ? a.themes[0].content : "";
+    const bContent = b.themes.length > 0 ? b.themes[0].content : "";
+    return aContent.localeCompare(bContent);
   });
-  // Отбираем мероприятия с категориями, не включающими категории типа "themes"
-  const nonThemesEvents = events.filter((event) =>
-    event.categories.every((category) => category.type !== "themes")
-  );
-  // Сортируем мероприятия с категориями, не включающими категории типа "themes" по дате
-  nonThemesEvents.sort((a, b) => b.date_event - a.date_event);
-  // Объединяем массивы отсортированных мероприятий
-  const sortedEvents = themesEvents.concat(nonThemesEvents);
-  // Возвращаем отсортированный массив мероприятий
-  return sortedEvents;
+
+  return events;
 };
 const date_sort = async () => {
   const sortedEvents = await Event.find({ visible: "yes" }).sort("-date_event");

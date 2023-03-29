@@ -1,26 +1,32 @@
-import Category from "../models/Category.js";
+// import Category from "../models/Category.js";
+import Theme from "../models/Theme.js";
+import Format from "../models/Format.js";
 import Event from "../models/Event.js";
 
 const allCategories = async () => {
-  const categories = await Category.find();
-  return categories;
+  const themes = await Theme.find();
+  const format = await Format.find();
+  return { themes, format };
 };
 const allFormats = async () => {
-  const categories = await Category.find({ type: "format" });
-  return categories;
+  const format = await Format.find();
+  return format;
 };
 const allThemes = async () => {
-  const categories = await Category.find({ type: "themes" });
-  return categories;
+  const theme = await Theme.find();
+  return theme;
 };
 const byId = async (id) => {
-  const category = await Category.findById(id);
+  let category = await Theme.findById(id);
+  if (!category) category = await Format.findById(id);
   return category;
 };
 const categoryEvents = async (id) => {
-  const category = await Category.findById(id);
+  let category = await Theme.findById(id);
+  if (!category) category = await Format.findById(id);
   const categoryId = category.id;
-  const events = await Event.find({ categories: { _id: categoryId } });
+  let events = await Event.find({ formats: categoryId });
+  if (events.length === 0) events = await Event.find({ themes: categoryId });
   return events;
 };
 

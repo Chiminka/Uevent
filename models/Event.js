@@ -34,10 +34,16 @@ const EventSchema = new mongoose.Schema({
     type: Number,
     default: "10",
   },
-  categories: [
+  themes: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
+      ref: "Theme",
+    },
+  ],
+  formats: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Format",
     },
   ],
   img: {

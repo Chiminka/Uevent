@@ -1,6 +1,6 @@
 import Event from "../models/Event.js";
 import User from "../models/User.js";
-import Category from "../models/Category.js";
+// import Category from "../models/Category.js";
 import Comment from "../models/Comment.js";
 import Ticket from "../models/Ticket.js";
 import Company from "../models/Company.js";
@@ -12,6 +12,8 @@ import mailTransport from "../utils/mailTransport.js";
 import Stripe from "stripe";
 import { fileURLToPath } from "url";
 import path, { dirname } from "path";
+import Format from "../models/Format.js";
+import Theme from "../models/Theme.js";
 
 const stripe = Stripe(process.env.STRIPE_KEY);
 
@@ -86,8 +88,6 @@ const getAllEvents = async (req) => {
     }
   }
 
-  console.log(event); // здесь будет значение, возвращаемое промисом
-
   let arr_event = [];
   // здесь находятся ивенты, у которых есть еще билеты
   for (let i = 0; i < event.length; i++) {
@@ -120,7 +120,8 @@ const createEvent = async (req) => {
     date_post,
     tickets,
     price,
-    categories,
+    themes,
+    formats,
     location,
     members_visibles,
   } = req.body;
@@ -131,7 +132,8 @@ const createEvent = async (req) => {
     !date_event ||
     !tickets ||
     !location ||
-    !categories ||
+    !themes ||
+    !formats ||
     !price
   )
     return { message: "Content can not be empty" };
@@ -172,7 +174,8 @@ const createEvent = async (req) => {
     date_post,
     tickets,
     location,
-    categories: categories,
+    formats: formats,
+    themes: themes,
     img: fileName,
     members_visibles,
     author: company.id,
@@ -293,7 +296,8 @@ const updateEvent = async (req) => {
     description,
     date_event,
     date_post,
-    categories,
+    formats,
+    themes,
     price,
     tickets,
     location,
@@ -374,7 +378,8 @@ const updateEvent = async (req) => {
         ? (date_post = date_p)
         : (date_post = date_post);
     }
-    if (categories) event.categories = categories;
+    if (themes) event.themes = themes;
+    if (formats) event.formats = formats;
     if (notifications) event.notifications = notifications;
     if (title) event.title = title;
     if (description) event.description = description;
@@ -518,12 +523,35 @@ const getEventComments = async (req) => {
 };
 const getEventCategory = async (req) => {
   const event = await Event.findById(req.params.id);
-  const list = await Promise.all(
-    event.categories.map((title) => {
-      return Category.findById(title);
-    })
-  );
-  return list;
+  const format = await Format.find();
+  const theme = await Theme.find();
+
+  let mas = [];
+  for (let i = 0; i < event.formats.length; i++) {
+    for (let j = 0; j < format.length; j++) {
+      if (event.formats[i].toString() === format[j].id.toString())
+        mas.push(format[j]);
+    }
+  }
+  for (let i = 0; i < event.themes.length; i++) {
+    for (let j = 0; j < theme.length; j++) {
+      if (event.themes[i].toString() === theme[j].id.toString())
+        mas.push(theme[j]);
+    }
+  }
+
+  // const theme = await Promise.all(
+  //   event.categories.map((title) => {
+  //     return Theme.findById(title);
+  //   })
+  // );
+  // const format = await Promise.all(
+  //   event.categories.map((title) => {
+  //     return Format.findById(title);
+  //   })
+  // );
+
+  return { mas };
 };
 
 export default {
