@@ -5,6 +5,14 @@ const allCategories = async () => {
   const categories = await Category.find();
   return categories;
 };
+const allFormats = async () => {
+  const categories = await Category.find({ type: "format" });
+  return categories;
+};
+const allThemes = async () => {
+  const categories = await Category.find({ type: "themes" });
+  return categories;
+};
 const byId = async (id) => {
   const category = await Category.findById(id);
   return category;
@@ -16,4 +24,4 @@ const categoryEvents = async (id) => {
   return events;
 };
 
-export default { allCategories, byId, categoryEvents };
+export default { allCategories, byId, categoryEvents, allFormats, allThemes };

@@ -7,6 +7,14 @@ const categoryController = new CategoryController();
 const router = new Router();
 router.use(verifyJWT);
 
+// Get all themes +
+// http://localhost:3002/api/categories/themes
+router.get("/themes", categoryController.allThemes);
+
+// Get all formats +
+// http://localhost:3002/api/categories/formats
+router.get("/formats", categoryController.allFormats);
+
 // Get by ID +
 // http://localhost:3002/api/categories/:id
 router.get("/:id", categoryController.byId);

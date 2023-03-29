@@ -419,6 +419,7 @@ const payment = async (req, res) => {
           },
           unit_amount: price * 100,
         },
+        quantity: item.cartQuantity,
       };
     })
   );
