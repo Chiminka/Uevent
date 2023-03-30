@@ -10,6 +10,10 @@ const router = new Router();
 // http://localhost:3002/api/events/:id
 router.get("/:id", verifyUser, eventController.getEventById);
 
+// Upload a picture -
+// http://localhost:3002/api/events/:id/pic-load
+router.get("/:id/pic-load", verifyUser, eventController.loadPictures);
+
 // Get all visible events +
 // http://localhost:3002/api/events
 router.get("/", eventController.getAllEvents);
@@ -19,12 +23,20 @@ router.get("/", eventController.getAllEvents);
 router.post("/company/:id", verifyJWT, eventController.createEvent);
 
 // Delete event by id +
-// http://localhost:3002/api/events/:eventId/:companyId
-router.delete("/:eventId/:companyId", verifyJWT, eventController.deleteEvent);
+// http://localhost:3002/api/events/:eventId/company/:companyId
+router.delete(
+  "/:eventId/company/:companyId",
+  verifyJWT,
+  eventController.deleteEvent
+);
 
 // Update event by id +
-// http://localhost:3002/api/events/:eventId/:companyId
-router.patch("/:eventId/:companyId", verifyJWT, eventController.updateEvent);
+// http://localhost:3002/api/events/:eventId/company/:companyId
+router.patch(
+  "/:eventId/company/:companyId",
+  verifyJWT,
+  eventController.updateEvent
+);
 
 // Send tickets on the mail, add to members after buying and get promo code +
 // http://localhost:3002/api/events/after-the-payment

@@ -64,6 +64,7 @@ export const post_it_now = async () => {
         ].join("-");
 
         console.log(
+          " ",
           new Date(date.toISOString()),
           new Date(event[i].date_post.toISOString())
         );

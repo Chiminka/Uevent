@@ -117,13 +117,18 @@ const updateCompany = async (req) => {
   } else return { message: "No access!" };
 };
 const getCompanyEvents = async (req) => {
+  const page = req.body;
   // получить все ивенты компании
   const company = await Company.findById(req.params.id);
   const userId = company.id;
-  const events = await Event.find({ author: { _id: userId } })
-    .sort("-date_event")
-    .limit(5);
-  return events;
+  const events = await Event.find({ author: { _id: userId } }).sort(
+    "-date_event"
+  );
+  const pageSize = 5;
+  const startIndex = (page.page - 1) * pageSize;
+  const endIndex = page.page * pageSize;
+  const pageEvents = events.slice(startIndex, endIndex);
+  return pageEvents;
 };
 const createMyCompany = async (req) => {
   const { company_name, email, location } = req.body;

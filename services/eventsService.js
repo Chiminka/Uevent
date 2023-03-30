@@ -108,7 +108,27 @@ const getAllEvents = async (req) => {
   for (let i = 0; i < event.length; i++) {
     if (event[i].tickets > 0) arr_event.push(event[i]);
   }
-  return arr_event;
+  const page = req.body;
+  const pageSize = 5;
+  const startIndex = (page.page - 1) * pageSize;
+  const endIndex = page.page * pageSize;
+  const pageEvents = arr_event.slice(startIndex, endIndex);
+  return pageEvents;
+};
+const loadPictures = async (req) => {
+  const event = await Event.findById(req.params.eventId);
+  let fileName = "";
+  if (req.files) {
+    fileName = Date.now().toString() + req.files.image.name;
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    req.files.image.mv(path.join(__dirname, "..", "uploads", fileName));
+  }
+  if (fileName.length < 1) {
+    fileName = event.img;
+  }
+  if (fileName) event.img = fileName;
+  await event.save();
+  return event;
 };
 // если компания создала ивент - оповестить
 const createEvent = async (req) => {
@@ -153,17 +173,6 @@ const createEvent = async (req) => {
   )
     return { message: "Content can not be empty" };
 
-  let fileName = "";
-  if (req.files) {
-    fileName = Date.now().toString() + req.files.image.name;
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    req.files.image.mv(path.join(__dirname, "..", "uploads", fileName));
-  }
-
-  if (fileName.length < 1) {
-    fileName =
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQw-ByquDvpBITEAHnGNeqUyQGw7KX3gqz3A5vQyICAV67mzUB2G8HECVilUr521eXJx04&usqp=CAU";
-  }
   if (date_event) {
     const date_e = new Date(`${date_event}T00:00:00`);
     date_event = !date_event.includes("T")
@@ -191,7 +200,6 @@ const createEvent = async (req) => {
     location,
     formats: formats,
     themes: themes,
-    img: fileName,
     members_visibles,
     author: company.id,
   });
@@ -369,17 +377,6 @@ const updateEvent = async (req) => {
           subject: `Event "${event.title}" was changed by organizer. Check it on the site`,
         });
       }
-    let fileName = "";
-
-    if (req.files) {
-      fileName = Date.now().toString() + req.files.image.name;
-      const __dirname = dirname(fileURLToPath(import.meta.url));
-      req.files.image.mv(path.join(__dirname, "..", "uploads", fileName));
-    }
-
-    if (fileName.length < 1) {
-      fileName = event.img;
-    }
 
     if (date_event) {
       const date_e = new Date(`${date_event}T00:00:00`);
@@ -402,7 +399,6 @@ const updateEvent = async (req) => {
     if (date_event) event.date_event = date_event;
     if (tickets) event.tickets = tickets;
     if (location) event.location = location;
-    if (fileName) event.img = fileName;
     if (price) event.price = price;
     if (members_visibles) event.members_visibles = members_visibles;
 
@@ -580,4 +576,5 @@ export default {
   createComment,
   getEventComments,
   getEventCategory,
+  loadPictures,
 };

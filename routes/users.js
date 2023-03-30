@@ -10,7 +10,7 @@ const router = new Router();
 // http://localhost:3002/api/users/tickets
 router.get("/tickets", verifyJWT, userController.getMyTickets);
 
-// Get my companies -
+// Get my companies +
 // http://localhost:3002/api/users/companies
 router.get("/companies", verifyJWT, userController.getMyCompanies);
 

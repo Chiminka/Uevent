@@ -52,6 +52,15 @@ export class EventController {
       res.json({ message: "Updating event error" });
     }
   }
+  async loadPictures(req, res) {
+    try {
+      const loadPictures = await eventService.loadPictures(req);
+      res.json(loadPictures);
+    } catch (error) {
+      console.log(error);
+      res.json({ message: "Updating event error" });
+    }
+  }
   async payment(req, res) {
     try {
       const payment = await eventService.payment(req, res);
