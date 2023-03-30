@@ -14,8 +14,11 @@ import { fileURLToPath } from "url";
 import path, { dirname } from "path";
 import Format from "../models/Format.js";
 import Theme from "../models/Theme.js";
+import fs from "fs";
+import util from "util";
 
 const stripe = Stripe(process.env.STRIPE_KEY);
+const mkdir = util.promisify(fs.mkdir);
 
 const getEventById = async (id, userID) => {
   const event = await Event.findById(id);
@@ -116,12 +119,18 @@ const getAllEvents = async (req) => {
   return pageEvents;
 };
 const loadPictures = async (req) => {
-  const event = await Event.findById(req.params.eventId);
+  const event = await Event.findById(req.params.id);
   let fileName = "";
   if (req.files) {
-    fileName = Date.now().toString() + req.files.image.name;
+    fileName = Date.now().toString() + req.files.files.name;
     const __dirname = dirname(fileURLToPath(import.meta.url));
-    req.files.image.mv(path.join(__dirname, "..", "uploads", fileName));
+    const uploadDir = path.join(__dirname, "..", "uploads");
+    try {
+      await mkdir(uploadDir);
+    } catch (err) {
+      if (err.code !== "EEXIST") throw err;
+    }
+    req.files.files.mv(path.join(uploadDir, fileName));
   }
   if (fileName.length < 1) {
     fileName = event.img;

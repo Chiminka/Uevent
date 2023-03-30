@@ -12,7 +12,7 @@ router.get("/:id", verifyUser, eventController.getEventById);
 
 // Upload a picture -
 // http://localhost:3002/api/events/:id/pic-load
-router.get("/:id/pic-load", verifyUser, eventController.loadPictures);
+router.post("/:id/pic-load", verifyUser, eventController.loadPictures);
 
 // Get all visible events +
 // http://localhost:3002/api/events
