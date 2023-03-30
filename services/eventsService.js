@@ -85,7 +85,7 @@ const getEventById = async (id, userID) => {
   return { event, similar_events, members };
 };
 const getAllEvents = async (req) => {
-  const { categoryType } = req.body;
+  const categoryType = req.params.sort;
   let event = "";
 
   switch (categoryType) {
@@ -99,7 +99,7 @@ const getAllEvents = async (req) => {
       event = result;
       break;
     }
-    default: {
+    case "date": {
       const result = await date_sort();
       event = result;
       break;
@@ -111,10 +111,9 @@ const getAllEvents = async (req) => {
   for (let i = 0; i < event.length; i++) {
     if (event[i].tickets > 0) arr_event.push(event[i]);
   }
-  const page = req.body;
   const pageSize = 5;
-  const startIndex = (page.page - 1) * pageSize;
-  const endIndex = page.page * pageSize;
+  const startIndex = (req.params.page - 1) * pageSize;
+  const endIndex = req.params.page * pageSize;
   const pageEvents = arr_event.slice(startIndex, endIndex);
   return pageEvents;
 };

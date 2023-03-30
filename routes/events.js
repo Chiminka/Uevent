@@ -15,8 +15,8 @@ router.get("/:id", verifyUser, eventController.getEventById);
 router.post("/:id/pic-load", verifyUser, eventController.loadPictures);
 
 // Get all visible events +
-// http://localhost:3002/api/events
-router.get("/", eventController.getAllEvents);
+// http://localhost:3002/api/events/:page/:sort
+router.get("/:page/:sort", eventController.getAllEvents);
 
 // Create new event +
 // http://localhost:3002/api/events/company/:id
