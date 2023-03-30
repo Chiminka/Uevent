@@ -26,7 +26,6 @@ const format_sort = async () => {
 
   return events;
 };
-
 const themes_sort = async () => {
   // Получаем список всех ивентов из базы данных
   const events = await Event.find();
@@ -53,6 +52,13 @@ const themes_sort = async () => {
 };
 const date_sort = async () => {
   const sortedEvents = await Event.find({ visible: "yes" }).sort("-date_event");
+  for (let i = 0; i < sortedEvents.length; i++) {
+    const event = sortedEvents[i];
+    const themes = await Theme.find({ _id: { $in: event.themes } });
+    event.themes = themes;
+    const formats = await Format.find({ _id: { $in: event.formats } });
+    event.formats = formats;
+  }
   return sortedEvents;
 };
 

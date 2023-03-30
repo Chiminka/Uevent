@@ -21,6 +21,7 @@ const getEventById = async (id, userID) => {
   const event = await Event.findById(id);
 
   const all_events = await Event.find();
+
   let similar_events = [];
 
   var intersect = function (arr1, arr2) {
@@ -30,11 +31,20 @@ const getEventById = async (id, userID) => {
   };
 
   for (let i = 0; i < all_events.length; i++) {
-    if (all_events[i].categories) {
+    if (all_events[i].themes || all_events[i].formats) {
       if (
-        intersect(event.categories, all_events[i].categories).length > 0 &&
+        (intersect(event.themes, all_events[i].themes).length > 0 ||
+          intersect(event.formats, all_events[i].formats).length > 0) &&
         event.id !== all_events[i].id
       ) {
+        const themes = await Theme.find({
+          _id: { $in: all_events[i].themes },
+        });
+        all_events[i].themes = themes;
+        const formats = await Format.find({
+          _id: { $in: all_events[i].formats },
+        });
+        all_events[i].formats = formats;
         similar_events.push(all_events[i]);
       }
     }
@@ -63,6 +73,11 @@ const getEventById = async (id, userID) => {
       }
     }
   }
+
+  const themes = await Theme.find({ _id: { $in: event.themes } });
+  event.themes = themes;
+  const formats = await Format.find({ _id: { $in: event.formats } });
+  event.formats = formats;
 
   return { event, similar_events, members };
 };
