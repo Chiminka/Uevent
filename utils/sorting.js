@@ -61,5 +61,35 @@ const date_sort = async () => {
   }
   return sortedEvents;
 };
+const filter_format = async () => {
+  const filteredEvents = await Event.find();
+  let mas = [];
+  for (let i = 0; i < filteredEvents.length; i++) {
+    if (filteredEvents[i].formats.toString() !== "64269fe08d89323058b7a30f") {
+      const event = await Event.findById(filteredEvents[i].id);
+      const themes = await Theme.find({ _id: { $in: event.themes } });
+      event.themes = themes;
+      const formats = await Format.find({ _id: { $in: event.formats } });
+      event.formats = formats;
+      mas.push(event);
+    }
+  }
+  return mas;
+};
+const filter_themes = async () => {
+  const filteredEvents = await Event.find();
+  let mas = [];
+  for (let i = 0; i < filteredEvents.length; i++) {
+    if (filteredEvents[i].themes.toString() !== "64269fd38d89323058b7a309") {
+      const event = await Event.findById(filteredEvents[i].id);
+      const themes = await Theme.find({ _id: { $in: event.themes } });
+      event.themes = themes;
+      const formats = await Format.find({ _id: { $in: event.formats } });
+      event.formats = formats;
+      mas.push(event);
+    }
+  }
+  return mas;
+};
 
-export { format_sort, themes_sort, date_sort };
+export { format_sort, themes_sort, date_sort, filter_format, filter_themes };

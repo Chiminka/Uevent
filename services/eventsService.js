@@ -7,7 +7,13 @@ import Company from "../models/Company.js";
 import Promocode from "../models/Promocode.js";
 
 import promo from "../utils/create_promo.js";
-import { format_sort, themes_sort, date_sort } from "../utils/sorting.js";
+import {
+  format_sort,
+  themes_sort,
+  date_sort,
+  filter_format,
+  filter_themes,
+} from "../utils/sorting.js";
 import mailTransport from "../utils/mailTransport.js";
 import Stripe from "stripe";
 import { fileURLToPath } from "url";
@@ -104,6 +110,16 @@ const getAllEvents = async (req) => {
       event = result;
       break;
     }
+    case "filter_format": {
+      const result = await filter_format();
+      event = result;
+      break;
+    }
+    case "filter_themes": {
+      const result = await filter_themes();
+      event = result;
+      break;
+    }
   }
 
   let arr_event = [];
@@ -181,6 +197,13 @@ const createEvent = async (req) => {
   )
     return { message: "Content can not be empty" };
 
+  if (
+    (themes.length > 1 || formats.length > 1) &&
+    (themes.includes("64269fd38d89323058b7a309") ||
+      formats.includes("64269fe08d89323058b7a30f"))
+  )
+    return { message: "there is mustn't be anything else if it has 'none'" };
+
   if (date_event) {
     const date_e = new Date(`${date_event}T00:00:00`);
     date_event = !date_event.includes("T")
@@ -219,7 +242,6 @@ const createEvent = async (req) => {
 
   // добавляем 3 недели к текущей дате
   var futureDate = new Date(currentDate.getTime() + 21 * 24 * 60 * 60 * 1000);
-  console.log(futureDate);
 
   const newPromo = new Promocode({
     event: newEvent.id,
@@ -334,6 +356,13 @@ const updateEvent = async (req) => {
     location,
     members_visibles,
   } = req.body;
+
+  if (
+    (themes.length > 1 || formats.length > 1) &&
+    (themes.includes("64269fd38d89323058b7a309") ||
+      formats.includes("64269fe08d89323058b7a30f"))
+  )
+    return { message: "there is mustn't be anything else if it has 'none'" };
 
   if (!req.params.companyId) return "Provide an id of event company";
 
