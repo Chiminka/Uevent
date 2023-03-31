@@ -221,17 +221,20 @@ const forgotPassword = async (body) => {
 const reset = async (body, token, req) => {
   const { new_password, confirm_password } = body;
 
-  if (!new_password || !confirm_password)
+  if (!new_password || !confirm_password || !token) {
     return { message: "Content can not be empty" };
+  }
 
   jwt.verify(
     token,
     process.env.JWT_SECRET,
     asyncHandler(async (err, decoded) => {
+      if (decoded === undefined) return { message: "Wrong token" };
       req.decoded = decoded.email;
       if (err) return { message: "Forbidden" };
     })
   );
+
   const user = await User.findOne({ email: req.decoded });
   if (!user) return { success: false, message: "Sorry, user not found!" };
 
