@@ -7,13 +7,7 @@ import Company from "../models/Company.js";
 import Promocode from "../models/Promocode.js";
 
 import promo from "../utils/create_promo.js";
-import {
-  format_sort,
-  themes_sort,
-  date_sort,
-  filter_format,
-  filter_themes,
-} from "../utils/sorting.js";
+import { format_sort, themes_sort, date_sort } from "../utils/sorting.js";
 import mailTransport from "../utils/mailTransport.js";
 import Stripe from "stripe";
 import { fileURLToPath } from "url";
@@ -92,31 +86,49 @@ const getEventById = async (id, userID) => {
 };
 const getAllEvents = async (req) => {
   const categoryType = req.params.sort;
+
+  if (req.query.filterThemes.length === 0) {
+    req.query.filterThemes = null;
+  }
+  if (req.query.filterFormats.length === 0) {
+    req.query.filterFormats = null;
+  }
+
+  const filterThemesArray = JSON.parse(req.query.filterThemes);
+  const filterFormatsArray = JSON.parse(req.query.filterFormats);
+
+  const search = req.query.search;
+
   let event = "";
 
   switch (categoryType) {
     case "format": {
-      const result = await format_sort();
+      //если сортировка по формату и есть фильтры
+      const result = await format_sort(
+        filterThemesArray,
+        filterFormatsArray,
+        search
+      );
       event = result;
       break;
     }
     case "themes": {
-      const result = await themes_sort();
+      //если сортировка по туматике и есть фильтры
+      const result = await themes_sort(
+        filterThemesArray,
+        filterFormatsArray,
+        search
+      );
       event = result;
       break;
     }
     case "date": {
-      const result = await date_sort();
-      event = result;
-      break;
-    }
-    case "filter_format": {
-      const result = await filter_format();
-      event = result;
-      break;
-    }
-    case "filter_themes": {
-      const result = await filter_themes();
+      //если сортировка по дате и есть фильтры
+      const result = await date_sort(
+        filterThemesArray,
+        filterFormatsArray,
+        search
+      );
       event = result;
       break;
     }
@@ -127,11 +139,14 @@ const getAllEvents = async (req) => {
   for (let i = 0; i < event.length; i++) {
     if (event[i].tickets > 0) arr_event.push(event[i]);
   }
-  const pageSize = 5;
+  const pageSize = 10;
   const startIndex = (req.params.page - 1) * pageSize;
   const endIndex = req.params.page * pageSize;
   const pageEvents = arr_event.slice(startIndex, endIndex);
-  return pageEvents;
+
+  const totalPages = Math.ceil(arr_event.length / pageSize);
+
+  return { pageEvents, totalPages };
 };
 const loadPictures = async (req) => {
   const event = await Event.findById(req.params.id);

@@ -10,7 +10,7 @@ const router = new Router();
 // http://localhost:3002/api/events/:id
 router.get("/:id", verifyUser, eventController.getEventById);
 
-// Upload a picture -
+// Upload a picture +
 // http://localhost:3002/api/events/:id/pic-load
 router.post("/:id/pic-load", verifyUser, eventController.loadPictures);
 
