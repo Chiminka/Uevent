@@ -23,6 +23,10 @@ const mkdir = util.promisify(fs.mkdir);
 const getEventById = async (id, userID) => {
   const event = await Event.findById(id);
 
+  let idAuthor = event.author.toString();
+  const author = await Company.findById(idAuthor);
+  event.author = author;
+
   const all_events = await Event.find();
 
   let similar_events = [];
@@ -40,6 +44,9 @@ const getEventById = async (id, userID) => {
           intersect(event.formats, all_events[i].formats).length > 0) &&
         event.id !== all_events[i].id
       ) {
+        let idAuthor = all_events[i].author.toString();
+        const author = await Company.findById(idAuthor);
+        all_events[i].author = author;
         const themes = await Theme.find({
           _id: { $in: all_events[i].themes },
         });
@@ -55,27 +62,24 @@ const getEventById = async (id, userID) => {
 
   const members = [];
 
-  let ticket = await Ticket.findOne({ event: id });
-  if (ticket !== null) {
+  let ticket = await Ticket.find({ event: id });
+  for (let i = 0; i < ticket.length; i++)
     if (event.members_visibles === "everyone") {
-      if (ticket.visible === "yes") {
-        let user = await User.findById(ticket.user);
+      if (ticket[i].visible === "yes") {
+        let user = await User.findById(ticket[i].user);
         members.push(user);
       }
     } else {
-      let tickets = await Ticket.find();
-      for (let i = 0; i < tickets.length; i++) {
-        if (userID.toString() === tickets[i].user.toString()) {
-          if (ticket.visible === "yes") {
-            let user = await User.findById(ticket.user);
+      for (let j = 0; j < ticket.length; j++)
+        if (userID.toString() === ticket[j].user.toString()) {
+          if (ticket[i].visible === "yes") {
+            let user = await User.findById(ticket[i].user);
             if (!members.some((m) => m.id === user.id)) {
               members.push(user);
             }
           }
         }
-      }
     }
-  }
 
   const themes = await Theme.find({ _id: { $in: event.themes } });
   event.themes = themes;
