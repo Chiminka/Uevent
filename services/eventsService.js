@@ -89,69 +89,35 @@ const getEventById = async (id, userID) => {
   return { event, similar_events, members };
 };
 const getAllEvents = async (req) => {
-  const categoryType = req.params.sort;
-
-  if (req.query.filterThemes.length === 0) {
-    req.query.filterThemes = null;
-  }
-  if (req.query.filterFormats.length === 0) {
-    req.query.filterFormats = null;
-  }
-
-  const filterThemesArray = req.query.filterThemes;
-  const filterFormatsArray = req.query.filterFormats;
-
+  const { sort: categoryType } = req.params;
+  const filterThemesArray = req.query.filterThemes || null;
+  const filterFormatsArray = req.query.filterFormats || null;
   const search = req.query.search;
 
-  let event = "";
+  const getResult = async (categoryType) => {
+    switch (categoryType) {
+      case "format":
+        return await format_sort(filterThemesArray, filterFormatsArray, search);
+      case "themes":
+        return await themes_sort(filterThemesArray, filterFormatsArray, search);
+      case "date":
+        return await date_sort(filterThemesArray, filterFormatsArray, search);
+      default:
+        throw new Error(`Invalid category type: ${categoryType}`);
+    }
+  };
 
-  switch (categoryType) {
-    case "format": {
-      //если сортировка по формату и есть фильтры
-      const result = await format_sort(
-        filterThemesArray,
-        filterFormatsArray,
-        search
-      );
-      event = result;
-      break;
-    }
-    case "themes": {
-      //если сортировка по туматике и есть фильтры
-      const result = await themes_sort(
-        filterThemesArray,
-        filterFormatsArray,
-        search
-      );
-      event = result;
-      break;
-    }
-    case "date": {
-      //если сортировка по дате и есть фильтры
-      const result = await date_sort(
-        filterThemesArray,
-        filterFormatsArray,
-        search
-      );
-      event = result;
-      break;
-    }
-  }
-
-  let arr_event = [];
-  // здесь находятся ивенты, у которых есть еще билеты
-  for (let i = 0; i < event.length; i++) {
-    if (event[i].tickets > 0) arr_event.push(event[i]);
-  }
+  const events = await getResult(categoryType);
+  const arr_event = events.filter((event) => event.tickets > 0);
   const pageSize = 10;
   const startIndex = (req.params.page - 1) * pageSize;
   const endIndex = req.params.page * pageSize;
   const pageEvents = arr_event.slice(startIndex, endIndex);
-
   const totalPages = Math.ceil(arr_event.length / pageSize);
 
   return { pageEvents, totalPages };
 };
+
 const loadPictures = async (req) => {
   const event = await Event.findById(req.params.id);
   let fileName = "";
