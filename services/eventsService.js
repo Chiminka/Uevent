@@ -98,8 +98,8 @@ const getAllEvents = async (req) => {
     req.query.filterFormats = null;
   }
 
-  const filterThemesArray = JSON.parse(req.query.filterThemes);
-  const filterFormatsArray = JSON.parse(req.query.filterFormats);
+  const filterThemesArray = req.query.filterThemes;
+  const filterFormatsArray = req.query.filterFormats;
 
   const search = req.query.search;
 
