@@ -8,7 +8,7 @@ const UserSchema = new mongoose.Schema({
   avatar: {
     type: String,
     default:
-      "https://st4.depositphotos.com/9998432/20073/v/950/depositphotos_200738788-stock-illustration-default-placeholder-businesswoman-half-length.jpg?forcejpeg=true",
+      "depositphotos_200738788-stock-illustration-default-placeholder-businesswoman-half-length.jpg",
   },
   full_name: {
     type: String,

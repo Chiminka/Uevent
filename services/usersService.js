@@ -6,6 +6,10 @@ import { fileURLToPath } from "url";
 import path, { dirname } from "path";
 import Ticket from "../models/Ticket.js";
 import Company from "../models/Company.js";
+import fs from "fs";
+import util from "util";
+
+const mkdir = util.promisify(fs.mkdir);
 
 const getMyTickets = async (req) => {
   // получить все приобретенные билеты
@@ -49,22 +53,33 @@ const deleteUser = async (req, res) => {
     return { message: "Cookie were cleared, user was deleted" };
   } else return { message: "No access!" };
 };
+const loadProfilePhoto = async (req) => {
+  const user = await User.findById(req.params.id);
+  let fileName = "";
+  if (req.files) {
+    fileName = Date.now().toString() + req.files.files.name;
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const uploadDir = path.join(__dirname, "..", "uploads");
+    try {
+      await mkdir(uploadDir);
+    } catch (err) {
+      if (err.code !== "EEXIST") throw err;
+    }
+    req.files.files.mv(path.join(uploadDir, fileName));
+  }
+
+  if (fileName.length < 1) {
+    fileName = user.avatar;
+  }
+  user.avatar = fileName;
+  user.save();
+  return user;
+};
 const updateUser = async (req) => {
   const { full_name, username, password, email, companies } = req.body;
   const user = await User.findById(req.params.id);
 
   if (req.user._id.equals(user._id)) {
-    let fileName = "";
-    if (req.files) {
-      fileName = Date.now().toString() + req.files.image.name;
-      const __dirname = dirname(fileURLToPath(import.meta.url));
-      req.files.image.mv(path.join(__dirname, "..", "uploads", fileName));
-    }
-
-    if (fileName.length < 1) {
-      fileName = user.avatar;
-    }
-    user.avatar = fileName;
     user.full_name = full_name;
     if (username) {
       user.username = username;
@@ -130,4 +145,5 @@ export default {
   updateUser,
   subscriptionUser,
   getMyCompanies,
+  loadProfilePhoto,
 };

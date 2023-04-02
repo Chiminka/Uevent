@@ -212,13 +212,6 @@ const createEvent = async (req) => {
   )
     return { message: "Content can not be empty" };
 
-  if (
-    (themes.length > 1 || formats.length > 1) &&
-    (themes.includes("64269fd38d89323058b7a309") ||
-      formats.includes("64269fe08d89323058b7a30f"))
-  )
-    return { message: "there is mustn't be anything else if it has 'none'" };
-
   if (date_event) {
     const date_e = new Date(`${date_event}T00:00:00`);
     date_event = !date_event.includes("T")

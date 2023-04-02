@@ -48,8 +48,7 @@ const EventSchema = new mongoose.Schema({
   ],
   img: {
     type: String,
-    default:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQw-ByquDvpBITEAHnGNeqUyQGw7KX3gqz3A5vQyICAV67mzUB2G8HECVilUr521eXJx04&usqp=CAU",
+    default: "images.jpg",
   },
   notifications: {
     type: Boolean,

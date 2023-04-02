@@ -10,6 +10,15 @@ export class UserController {
       res.json({ message: "Getting tickets error" });
     }
   }
+  async loadProfilePhoto(req, res) {
+    try {
+      const loadProfilePhoto = await userService.loadProfilePhoto(req);
+      res.json(loadProfilePhoto);
+    } catch (error) {
+      console.log(error);
+      res.json({ message: "Upload photo error" });
+    }
+  }
   async getMyCompanies(req, res) {
     try {
       const getMyCompanies = await userService.getMyCompanies(req);

@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import mailTransport from "../utils/mailTransport.js";
 import asyncHandler from "express-async-handler";
 
-const register = async (userData, fileName) => {
+const register = async (userData) => {
   const { username, full_name, password, email, repeatPassword } = userData;
 
   if (!username || !password || !email || !repeatPassword)
@@ -38,17 +38,11 @@ const register = async (userData, fileName) => {
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(password, salt);
 
-    if (fileName.length < 1) {
-      fileName =
-        "https://st4.depositphotos.com/9998432/20073/v/950/depositphotos_200738788-stock-illustration-default-placeholder-businesswoman-half-length.jpg?forcejpeg=true";
-    }
-
     const newUser = new User({
       full_name,
       username,
       password: hash,
       email,
-      avatar: fileName,
     });
 
     const v_token = jwt.sign(

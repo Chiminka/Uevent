@@ -1,21 +1,10 @@
-import { fileURLToPath } from "url";
-import path, { dirname } from "path";
-
 import authService from "../services/authService.js";
 
 export class AuthController {
   async register(req, res) {
     try {
-      if (req.files) {
-        let fileName = Date.now().toString() + req.files.image.name;
-        const __dirname = dirname(fileURLToPath(import.meta.url));
-        req.files.image.mv(path.join(__dirname, "..", "uploads", fileName));
-        const newUser = await authService.register(req.body, fileName);
-        res.json(newUser);
-      } else {
-        const newUser = await authService.register(req.body, "");
-        res.json(newUser);
-      }
+      const newUser = await authService.register(req.body);
+      res.json(newUser);
     } catch (error) {
       console.log(error);
       res.json({ message: "Creating user error" });
