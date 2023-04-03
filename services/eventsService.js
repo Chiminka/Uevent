@@ -21,70 +21,44 @@ const stripe = Stripe(process.env.STRIPE_KEY);
 const mkdir = util.promisify(fs.mkdir);
 
 const getEventById = async (id, userID) => {
-  const event = await Event.findById(id);
+  const [event, all_events, ticket] = await Promise.all([
+    Event.findById(id)
+      .populate("author")
+      .populate("themes")
+      .populate("formats"),
+    Event.find({
+      $or: [
+        { themes: { $exists: true, $ne: [] } },
+        { formats: { $exists: true, $ne: [] } },
+      ],
+    })
+      .populate("author")
+      .populate("themes")
+      .populate("formats"),
+    Ticket.find({ event: id }).populate("user"),
+  ]);
 
-  let idAuthor = event.author.toString();
-  const author = await Company.findById(idAuthor);
-  event.author = author;
+  const members = ticket
+    .filter(
+      (t) =>
+        event.members_visibles === "everyone" ||
+        (userID && t.user.id.toString() === userID.toString())
+    )
+    .filter((t) => t.visible === "yes")
+    .map((t) => t.user);
 
-  const all_events = await Event.find();
+  const { themes, formats } = event;
+  const themesSet = new Set(themes.map((t) => t.id));
+  const formatsSet = new Set(formats.map((f) => f.id));
 
-  let similar_events = [];
+  const similar_events = all_events.filter((e) => {
+    if (e.id === id) return false;
 
-  var intersect = function (arr1, arr2) {
-    return arr1.filter(function (n) {
-      return arr2.indexOf(n) !== -1;
-    });
-  };
+    const intersectThemes = e.themes.some((t) => themesSet.has(t.id));
+    const intersectFormats = e.formats.some((f) => formatsSet.has(f.id));
 
-  for (let i = 0; i < all_events.length; i++) {
-    if (all_events[i].themes || all_events[i].formats) {
-      if (
-        (intersect(event.themes, all_events[i].themes).length > 0 ||
-          intersect(event.formats, all_events[i].formats).length > 0) &&
-        event.id !== all_events[i].id
-      ) {
-        let idAuthor = all_events[i].author.toString();
-        const author = await Company.findById(idAuthor);
-        all_events[i].author = author;
-        const themes = await Theme.find({
-          _id: { $in: all_events[i].themes },
-        });
-        all_events[i].themes = themes;
-        const formats = await Format.find({
-          _id: { $in: all_events[i].formats },
-        });
-        all_events[i].formats = formats;
-        similar_events.push(all_events[i]);
-      }
-    }
-  }
-
-  const members = [];
-
-  let ticket = await Ticket.find({ event: id });
-  for (let i = 0; i < ticket.length; i++)
-    if (event.members_visibles === "everyone") {
-      if (ticket[i].visible === "yes") {
-        let user = await User.findById(ticket[i].user);
-        members.push(user);
-      }
-    } else {
-      for (let j = 0; j < ticket.length; j++)
-        if (userID.toString() === ticket[j].user.toString()) {
-          if (ticket[i].visible === "yes") {
-            let user = await User.findById(ticket[i].user);
-            if (!members.some((m) => m.id === user.id)) {
-              members.push(user);
-            }
-          }
-        }
-    }
-
-  const themes = await Theme.find({ _id: { $in: event.themes } });
-  event.themes = themes;
-  const formats = await Format.find({ _id: { $in: event.formats } });
-  event.formats = formats;
+    return intersectThemes || intersectFormats;
+  });
 
   return { event, similar_events, members };
 };
@@ -117,7 +91,6 @@ const getAllEvents = async (req) => {
 
   return { pageEvents, totalPages };
 };
-
 const loadPictures = async (req) => {
   const event = await Event.findById(req.params.id);
   let fileName = "";
