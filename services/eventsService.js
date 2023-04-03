@@ -26,12 +26,7 @@ const getEventById = async (id, userID) => {
       .populate("author")
       .populate("themes")
       .populate("formats"),
-    Event.find({
-      $or: [
-        { themes: { $exists: true, $ne: [] } },
-        { formats: { $exists: true, $ne: [] } },
-      ],
-    })
+    Event.find()
       .populate("author")
       .populate("themes")
       .populate("formats"),
