@@ -17,7 +17,11 @@ import Theme from "../models/Theme.js";
 import fs from "fs";
 import util from "util";
 
-const stripe = Stripe(process.env.STRIPE_KEY);
+console.log(process.env.STRIPE_KEY);
+
+const stripe = Stripe(
+  "sk_test_51Mbl5wGCxeoiwh2aTPy6BSwW9QSyQ0cIcI6yXJp7VVxZfRSZotUrxcRT2wqgY0I11ONDTaAJGIjtgno2pMXyp9mR00PkoU2gNj"
+);
 const mkdir = util.promisify(fs.mkdir);
 
 const getEventById = async (id, userID) => {
@@ -26,10 +30,7 @@ const getEventById = async (id, userID) => {
       .populate("author")
       .populate("themes")
       .populate("formats"),
-    Event.find()
-      .populate("author")
-      .populate("themes")
-      .populate("formats"),
+    Event.find().populate("author").populate("themes").populate("formats"),
     Ticket.find({ event: id }).populate("user"),
   ]);
 
@@ -42,16 +43,20 @@ const getEventById = async (id, userID) => {
     .filter((t) => t.visible === "yes")
     .map((t) => t.user);
 
+  // тематики и форматы которые есть у нашего ивента
   const { themes, formats } = event;
   const themesSet = new Set(themes.map((t) => t.id));
   const formatsSet = new Set(formats.map((f) => f.id));
 
+  // если массив themes элемента е имеет хотя бы какое-то (some) айди t, которое иммет
+  // вхождение (has) в массив themesSet, то суем этот элемент в similar_events
   const similar_events = all_events.filter((e) => {
     if (e.id === id) return false;
 
     const intersectThemes = e.themes.some((t) => themesSet.has(t.id));
     const intersectFormats = e.formats.some((f) => formatsSet.has(f.id));
 
+    // возвращает тру фолз
     return intersectThemes || intersectFormats;
   });
 
@@ -200,9 +205,12 @@ const createEvent = async (req) => {
   const users = await User.find();
   let arr_subs = [];
   for (let i = 0; i < users.length; i++) {
-    if (users[i].subscriptions)
-      for (let j = 0; j < users[i].subscriptions.length; j++) {
-        if (users[i].subscriptions[j].toString() === company.id.toString()) {
+    if (users[i].subscriptions_companies)
+      for (let j = 0; j < users[i].subscriptions_companies.length; j++) {
+        if (
+          users[i].subscriptions_companies[j].toString() ===
+          company.id.toString()
+        ) {
           arr_subs.push(users[i]);
         }
       }
@@ -222,7 +230,6 @@ const createEvent = async (req) => {
 // если компания удалила ивент - оповестить
 const deleteEvent = async (req) => {
   // может только компания, которая создала
-
   const event = await Event.findById(req.params.eventId);
   if (event === null) {
     return "this event doesn't exist";
@@ -233,56 +240,72 @@ const deleteEvent = async (req) => {
   const company = await Company.findById(req.params.companyId);
 
   if (user.companies.includes(company.id)) {
-    const users = await User.find();
-    let arr_subs = [];
-    for (let i = 0; i < users.length; i++) {
-      if (users[i].subscriptions)
-        for (let j = 0; j < users[i].subscriptions.length; j++) {
-          if (
-            (users[i].subscriptions[j].toString() === company.id.toString() ||
-              users[i].subscriptions[j].toString() === event.id.toString()) &&
-            !arr_subs.includes(users[i])
-          ) {
-            arr_subs.push(users[i]);
-          }
-        }
+    const users = await User.find({
+      $or: [
+        { subscriptions_companies: company.id },
+        { subscriptions_events: event.id },
+      ],
+    });
+
+    const arr_subs = await Promise.all(
+      users.map(async (user) => {
+        const subs_events = user.subscriptions_events.filter(
+          (sub) => sub.toString() !== event.id.toString()
+        );
+
+        // этот ивент удаляется из подписок
+        await User.findByIdAndUpdate(user.id, {
+          subscriptions_events: subs_events,
+        });
+
+        return user;
+      })
+    );
+
+    // если есть подписка на компанию или ивент
+    if (arr_subs.length > 0) {
+      await Promise.all(
+        arr_subs.map(async (member) => {
+          const author = await Company.findById(event.author);
+          mailTransport().sendMail({
+            from: author.email,
+            to: member.email,
+            subject: `Company ${company.company_name} deleted event "${event.title}". Check it on the site`,
+          });
+        })
+      );
     }
-    if (arr_subs)
-      for (let i = 0; i < arr_subs.length; i++) {
-        const member = await User.findById(arr_subs[i].id);
-        mailTransport().sendMail({
-          from: company.email,
-          to: member.email,
-          subject: `Company ${company.company_name} deleted event "${event.title}". Check it on the site`,
-        });
-      }
+
+    // удаление билета на этот ивент
     if (tickets.length > 0) {
-      const members = [];
-      for (let i = 0; i < tickets.length; i++) {
-        members.push(tickets[i].user);
-        await Ticket.findByIdAndDelete(tickets[i]);
-      }
-      console.log(members);
-      for (let i = 0; i < members.length; i++) {
-        const member = await User.findById(members[i]);
-        const author = await Company.findById(event.author);
-        mailTransport().sendMail({
-          from: author.email,
-          to: member.email,
-          subject: `Event "${event.title}" was deleted by organizer`,
-        });
-      }
-      await Event.findByIdAndDelete(req.params.eventId);
-      await Promocode.findOneAndDelete({ event: req.params.eventId });
-      return {
-        message: "Event was deleted and members were warned",
-      };
+      const members = tickets.map((ticket) => ticket.user);
+      await Promise.all([
+        Ticket.deleteMany({ _id: { $in: tickets } }),
+        Promise.all(
+          members.map(async (member) => {
+            const user = await User.findById(member);
+            const company = await Company.findById(event.author);
+            const mailOptions = {
+              from: company.email,
+              to: user.email,
+              subject: `Event "${event.title}" was deleted by organizer`,
+            };
+            await mailTransport().sendMail(mailOptions);
+          })
+        ),
+      ]);
+      // удаляется промо на этот ивент и сам ивент
+      await Promise.all([
+        Event.findByIdAndDelete(req.params.eventId),
+        Promocode.findOneAndDelete({ event: req.params.eventId }),
+      ]);
+      return { message: "Event was deleted and members were warned" };
     } else {
-      await Event.findByIdAndDelete(req.params.eventId);
-      await Promocode.findOneAndDelete({ event: req.params.eventId });
-      return {
-        message: "Event was deleted",
-      };
+      await Promise.all([
+        Event.findByIdAndDelete(req.params.eventId),
+        Promocode.findOneAndDelete({ event: req.params.eventId }),
+      ]);
+      return { message: "Event was deleted" };
     }
   } else return { message: "No access!" };
 };
@@ -303,13 +326,6 @@ const updateEvent = async (req) => {
     members_visibles,
   } = req.body;
 
-  if (
-    (themes.length > 1 || formats.length > 1) &&
-    (themes.includes("64269fd38d89323058b7a309") ||
-      formats.includes("64269fe08d89323058b7a30f"))
-  )
-    return { message: "there is mustn't be anything else if it has 'none'" };
-
   if (!req.params.companyId) return "Provide an id of event company";
 
   const company = await Company.findById(req.params.companyId);
@@ -328,16 +344,26 @@ const updateEvent = async (req) => {
     const users = await User.find();
     let arr_subs = [];
     for (let i = 0; i < users.length; i++) {
-      if (users[i].subscriptions)
-        for (let j = 0; j < users[i].subscriptions.length; j++) {
+      if (users[i].subscriptions_events || users[i].subscriptions_companies) {
+        for (let j = 0; j < users[i].subscriptions_events.length; j++) {
           if (
-            (users[i].subscriptions[j].toString() === company.id.toString() ||
-              users[i].subscriptions[j].toString() === event.id.toString()) &&
+            users[i].subscriptions_events[j].toString() ===
+              event.id.toString() &&
             !arr_subs.includes(users[i])
           ) {
             arr_subs.push(users[i]);
           }
         }
+        for (let j = 0; j < users[i].subscriptions_companies.length; j++) {
+          if (
+            users[i].subscriptions_companies[j].toString() ===
+              company.id.toString() &&
+            !arr_subs.includes(users[i])
+          ) {
+            arr_subs.push(users[i]);
+          }
+        }
+      }
     }
     console.log(arr_subs);
     if (arr_subs)
@@ -390,44 +416,42 @@ const updateEvent = async (req) => {
   } else return { message: "No access!" };
 };
 const payment = async (req, res) => {
-  const line_items = await Promise.all(
-    req.body.cartItems.map(async (item) => {
-      const promo = await Promocode.find({
-        users: req.user.id,
-        event: item.id,
-      });
-      let price = item.price;
-      if (promo) {
-        price = price - (price / 100) * 4;
-        await Promocode.updateOne(
-          { _id: promo._id },
-          { $pull: { users: req.user.id } }
-        );
-      }
-      return {
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: item.title,
-            images: [item.img],
-            description: item.description,
+  const line_items_promises = req.body.cartItems.map(async (item) => {
+    const promo = await Promocode.findOneAndDelete({
+      users: req.user.id,
+      event: item.id,
+    }).select("users");
+    let price = item.price;
+    // 4%
+    if (promo) {
+      price = price * 0.96;
+    }
+    return {
+      price_data: {
+        currency: "uah",
+        product_data: {
+          name: item.title,
+          description: item.description,
+          metadata: {
             date: item.date_event,
-            metadata: {
-              id: item.id,
-            },
+            id: item.id,
           },
-          unit_amount: price * 100,
         },
-        quantity: item.cartQuantity,
-      };
-    })
-  );
+        unit_amount: item.price * 100,
+      },
+      quantity: item.quantity,
+    };
+  });
+
+  const line_items = await Promise.all(line_items_promises);
+
   const session = await stripe.checkout.sessions.create({
     line_items,
     mode: "payment",
-    success_url: `${process.env.BASE_URL}/checkout-success`,
-    cancel_url: `${process.env.BASE_URL}/cart`,
+    success_url: `${process.env.BASE_URL}checkout-success`,
+    cancel_url: `${process.env.BASE_URL}cart`,
   });
+  console.log(session);
   res.send({ url: session.url });
 };
 const after_buying_action = async (req) => {

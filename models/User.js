@@ -28,9 +28,17 @@ const UserSchema = new mongoose.Schema({
     required: true,
     default: false,
   },
-  subscriptions: [
+  subscriptions_companies: [
     {
       type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      default: [],
+    },
+  ],
+  subscriptions_events: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Event",
       default: [],
     },
   ],

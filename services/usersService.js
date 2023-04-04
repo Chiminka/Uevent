@@ -8,6 +8,7 @@ import Ticket from "../models/Ticket.js";
 import Company from "../models/Company.js";
 import fs from "fs";
 import util from "util";
+import Event from "../models/Event.js";
 
 const mkdir = util.promisify(fs.mkdir);
 
@@ -134,8 +135,19 @@ const updateUser = async (req) => {
 };
 const subscriptionUser = async (req) => {
   const user = await User.findById(req.user.id);
-  user.subscriptions.push(req.params.id);
-  user.save();
+  if (
+    (await Event.findById(req.params.id)) &&
+    !user.subscriptions_events.includes(req.params.id)
+  ) {
+    user.subscriptions_events.push(req.params.id);
+    user.save();
+  } else if (
+    (await Company.findById(req.params.id)) &&
+    !user.subscriptions_companies.includes(req.params.id)
+  ) {
+    user.subscriptions_companies.push(req.params.id);
+    user.save();
+  }
   return user;
 };
 

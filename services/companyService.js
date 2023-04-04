@@ -3,6 +3,7 @@ import Event from "../models/Event.js";
 import jwt from "jsonwebtoken";
 import mailTransport from "../utils/mailTransport.js";
 import Company from "../models/Company.js";
+import Ticket from "../models/Ticket.js";
 
 // если компания удалила себя - оповестить
 const deleteCompany = async (req, res) => {
@@ -13,9 +14,12 @@ const deleteCompany = async (req, res) => {
     const users = await User.find();
     let arr_subs = [];
     for (let i = 0; i < users.length; i++) {
-      if (users[i].subscriptions)
-        for (let j = 0; j < users[i].subscriptions.length; j++) {
-          if (users[i].subscriptions[j].toString() === company.id.toString()) {
+      if (users[i].subscriptions_companies)
+        for (let j = 0; j < users[i].subscriptions_companies.length; j++) {
+          if (
+            users[i].subscriptions_companies[j].toString() ===
+            company.id.toString()
+          ) {
             arr_subs.push(users[i]);
           }
         }
@@ -31,11 +35,22 @@ const deleteCompany = async (req, res) => {
       }
     await Company.findByIdAndDelete(req.params.id);
     const companyID = req.params.id;
+    const events = await Event.find({ author: companyID });
+
+    for (let i = 0; i < events.length; i++) {
+      await Ticket.findOneAndDelete({ event: events[i].id });
+    }
+    // удаление айди компаний и ивентов из юзера
     await User.updateOne(
       { companies: companyID },
-      { $pull: { companies: companyID } }
+      {
+        $pull: {
+          subscriptions_companies: companyID,
+          subscriptions_events: { $in: events.map((event) => event.id) },
+          companies: companyID,
+        },
+      }
     );
-    const events = await Event.find({ author: companyID });
     for (let i = 0; i < events.length; i++) {
       await Event.findOneAndDelete({ author: events[i].author });
     }
@@ -53,10 +68,11 @@ const updateCompany = async (req) => {
       const users = await User.find();
       let arr_subs = [];
       for (let i = 0; i < users.length; i++) {
-        if (users[i].subscriptions)
-          for (let j = 0; j < users[i].subscriptions.length; j++) {
+        if (users[i].subscriptions_companies)
+          for (let j = 0; j < users[i].subscriptions_companies.length; j++) {
             if (
-              users[i].subscriptions[j].toString() === company.id.toString()
+              users[i].subscriptions_companies[j].toString() ===
+              company.id.toString()
             ) {
               arr_subs.push(users[i]);
             }
@@ -106,13 +122,13 @@ const updateCompany = async (req) => {
         subject: "Verify your email account",
         html: `<h1>${url}</h1>`,
       });
-      // await company.save();
+      await company.save();
       return {
         company,
         message: "An Email sent to your account please verify",
       };
     }
-    // await company.save();
+    await company.save();
     return company;
   } else return { message: "No access!" };
 };
@@ -124,26 +140,19 @@ const getCompanyEvents = async (req) => {
   const events = await Event.find({ author: { _id: userId } }).sort(
     "-date_event"
   );
-  const pageSize = 5;
+  const pageSize = 10;
   const startIndex = (page.page - 1) * pageSize;
   const endIndex = page.page * pageSize;
   const pageEvents = events.slice(startIndex, endIndex);
-  return pageEvents;
+  const totalPages = Math.ceil(events.length / pageSize);
+
+  return { pageEvents, totalPages };
 };
 const createMyCompany = async (req) => {
   const { company_name, email, location } = req.body;
 
   if (!location || !company_name || !email)
     return { message: "Content can not be empty" };
-
-  // const emailExist = await User.findOne({ email });
-  // console.log(emailExist);
-
-  // if (emailExist) {
-  //   return {
-  //     message: "These username or email already are taken",
-  //   };
-  // }
 
   var validRegex =
     /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;

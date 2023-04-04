@@ -6,13 +6,13 @@ const format_sort = async (filterThemesArray, filterFormatsArray, search) => {
   const filter = {};
   if (filterThemesArray && filterFormatsArray) {
     filter.$and = [
-      { themes: { $in: filterThemesArray } },
-      { formats: { $in: filterFormatsArray } },
+      { themes: { $all: filterThemesArray } },
+      { formats: { $all: filterFormatsArray } },
     ];
   } else if (filterThemesArray) {
-    filter.themes = { $in: filterThemesArray };
+    filter.themes = { $all: filterThemesArray };
   } else if (filterFormatsArray) {
-    filter.formats = { $in: filterFormatsArray };
+    filter.formats = { $all: filterFormatsArray };
   }
 
   const searchRegex = new RegExp(search, "i");
@@ -36,13 +36,13 @@ const themes_sort = async (filterThemesArray, filterFormatsArray, search) => {
 
   if (filterThemesArray && filterFormatsArray) {
     filter.$and = [
-      { themes: { $in: filterThemesArray } },
-      { formats: { $in: filterFormatsArray } },
+      { themes: { $all: filterThemesArray } },
+      { formats: { $all: filterFormatsArray } },
     ];
   } else if (filterThemesArray) {
-    filter.themes = { $in: filterThemesArray };
+    filter.themes = { $all: filterThemesArray };
   } else if (filterFormatsArray) {
-    filter.formats = { $in: filterFormatsArray };
+    filter.formats = { $all: filterFormatsArray };
   }
 
   const events = await Event.find(filter)
@@ -65,11 +65,12 @@ const date_sort = async (filterThemesArray, filterFormatsArray, search) => {
       ? {
           $and: [
             ...(filterThemesArray
-              ? [{ themes: { $in: filterThemesArray } }]
+              ? [{ themes: { $all: filterThemesArray } }]
               : []),
             ...(filterFormatsArray
-              ? [{ formats: { $in: filterFormatsArray } }]
+              ? [{ formats: { $all: filterFormatsArray } }]
               : []),
+            { visible: "yes" },
           ],
         }
       : { visible: "yes" };
