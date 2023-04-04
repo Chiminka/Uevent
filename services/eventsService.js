@@ -437,7 +437,7 @@ const payment = async (req, res) => {
             id: item.id,
           },
         },
-        unit_amount: item.price * 100,
+        unit_amount: item.price,
       },
       quantity: item.quantity,
     };
