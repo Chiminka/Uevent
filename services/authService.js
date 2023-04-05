@@ -175,11 +175,17 @@ const verifyEmail = async (token, req) => {
   return { success: true, message: "Your email is verified" };
 };
 const getMe = async (user_id) => {
-  const user = await User.findById(user_id).populate([
-    "subscriptions_events",
-    "subscriptions_companies",
-    "companies",
-  ]);
+  const user = await User.findById(user_id)
+    .populate({
+      path: "subscriptions_events",
+      select: "id title",
+    })
+    .populate({
+      path: "subscriptions_companies",
+      select: "id company_name",
+    })
+    .populate("companies");
+
   if (!user) {
     return {
       message: "That user is not exist",

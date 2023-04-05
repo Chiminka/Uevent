@@ -41,7 +41,8 @@ const getEventById = async (id, userID) => {
         (userID && t.user.id.toString() === userID.toString())
     )
     .filter((t) => t.visible === "yes")
-    .map((t) => t.user);
+    .map((t) => t.user)
+    .filter((value, index, self) => self.indexOf(value) === index);
 
   // тематики и форматы которые есть у нашего ивента
   const { themes, formats } = event;
@@ -483,29 +484,33 @@ const after_buying_action = async (req) => {
 
   for (let i = 0; i < bought_tickets.length; i++) {
     const event = await Event.findById(bought_tickets[i].id);
+    console.log("1", event, bought_tickets[i].id);
     const company = await Company.findById(event.author);
 
     const date = event.date_event.toLocaleString("ru-RU", options);
 
+    console.log(user.email);
     // после оплаты отправляются билеты по почте и добавляется юзер в мемберы ивента, юзеру зачисляется какой-то промокод со скидкой, -1 билет в счетчике билетов ивента
     mailTransport().sendMail({
       from: company.email,
       to: user.email,
       subject: `Your tickets from "Afisha"`,
-      html: `<h1>${user.full_name} bought tickets from "Afisha" on ${event.title}</h1>
+      html: `<h1>${user.full_name} bought ${bought_tickets[i].quantity} tickets from "Afisha" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
-        <h2>Address: ${event.location}</h2>
+        <h2>Address: ${event.location.description}</h2>
         <h1>Was paid: ${event.price}</h1>`,
     });
+
+    console.log(bought_tickets[i].quantity);
 
     if (event.notifications === true) {
       mailTransport().sendMail({
         from: process.env.USER,
         to: company.email,
         subject: `The new member on your event from "Afisha"`,
-        html: `<h1>${user.full_name} bought tickets from "Afisha" on ${event.title}</h1>
+        html: `<h1>${user.full_name} bought ${bought_tickets[i].quantity} tickets from "Afisha" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
-        <h2>Address: ${event.location}</h2>
+        <h2>Address: ${event.location.description}</h2>
         <h1>Was paid: ${event.price}</h1>`,
       });
     }
@@ -514,29 +519,46 @@ const after_buying_action = async (req) => {
     await event.save();
 
     // here made a ticket
-    for (let i = 0; i < bought_tickets.quantity; i++) {
+    for (let j = 0; j < bought_tickets[i].quantity; j++) {
+      console.log(i);
       const newTicket = new Ticket({
-        visible: bought_tickets.visible,
-        remind: bought_tickets.remind,
+        visible: bought_tickets[i].visible,
+        remind: bought_tickets[i].remind,
         user: req.user.id,
         event: event.id,
       });
       await newTicket.save();
     }
   }
-
   // Определяем массив
   let promo = await Promocode.find();
-  let arr = [];
-  for (let i = 0; i < promo.length; i++) {
-    arr.push(promo[i].id);
-  }
-  // Получаем случайный ключ массива
-  var rand = Math.floor(Math.random() * arr.length);
+  let arr = promo.map((p) => p.id);
 
-  promo = await Promocode.findById(arr[rand]);
-  promo.users.push(req.user.id);
-  promo.save();
+  // Получаем случайный ключ массива
+  var rand =
+    Math.random() <= 0.8 ? Math.floor(Math.random() * arr.length) : null;
+
+  if (rand !== null) {
+    promo = await Promocode.findById(arr[rand]);
+    if (!promo.users.includes(req.user.id)) {
+      console.log(promo);
+      promo.users.push(req.user.id);
+      await promo.save();
+      const nameEvent = await Event.findById(promo.event);
+
+      if (promo.promo_code.length > 0) {
+        mailTransport().sendMail({
+          from: process.env.USER,
+          to: user.email,
+          subject: `You got a promo-code! From site Afisha`,
+          html: `<h1>${user.full_name}, you got a promo-code for event ${nameEvent.title}</h1>
+        <h2>Put it in and get 4% discount!</h2>
+        <h2>${promo.promo_code}</h2>`,
+        });
+      }
+    }
+  }
+
   return { message: "Tickets were sent on your email" };
 };
 const createComment = async (req) => {
