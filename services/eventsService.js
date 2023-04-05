@@ -345,6 +345,7 @@ const updateEvent = async (req) => {
     let arr_subs = [];
     for (let i = 0; i < users.length; i++) {
       if (users[i].subscriptions_events || users[i].subscriptions_companies) {
+        console.log(users[i].subscriptions_events);
         for (let j = 0; j < users[i].subscriptions_events.length; j++) {
           if (
             users[i].subscriptions_events[j].toString() ===
@@ -455,12 +456,12 @@ const payment = async (req, res) => {
     };
   });
 
+  console.log(arr_for_ticket);
+
   const session = await stripe.checkout.sessions.create({
     line_items,
     mode: "payment",
-   success_url: `${
-      process.env.BASE_URL
-    }checkout-success/${encodeURIComponent(
+    success_url: `${process.env.BASE_URL}checkout-success/${encodeURIComponent(
       JSON.stringify(arr_for_ticket)
     )}`,
     cancel_url: `${process.env.BASE_URL}cart`,
@@ -470,8 +471,7 @@ const payment = async (req, res) => {
 };
 const after_buying_action = async (req) => {
   const user = await User.findById(req.user.id);
-  console.log("hello");
-  const cartItems = JSON.parse(req.params.cartItems);
+  const { bought_tickets } = req.body;
 
   const options = {
     day: "2-digit",
@@ -481,7 +481,7 @@ const after_buying_action = async (req) => {
     minute: "2-digit",
   };
 
-  for (let i = 0; i < bought_tickets.id.length; i++) {
+  for (let i = 0; i < bought_tickets.length; i++) {
     const event = await Event.findById(bought_tickets[i].id);
     const company = await Company.findById(event.author);
 
@@ -514,13 +514,15 @@ const after_buying_action = async (req) => {
     await event.save();
 
     // here made a ticket
-    const newTicket = new Ticket({
-      // visible: bought_tickets.visible,
-      // remind: bought_tickets.remind,
-      user: req.user.id,
-      event: event.id,
-    });
-    // await newTicket.save();
+    for (let i = 0; i < bought_tickets.quantity; i++) {
+      const newTicket = new Ticket({
+        visible: bought_tickets.visible,
+        remind: bought_tickets.remind,
+        user: req.user.id,
+        event: event.id,
+      });
+      await newTicket.save();
+    }
   }
 
   // Определяем массив
