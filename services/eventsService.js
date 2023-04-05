@@ -448,11 +448,10 @@ const payment = async (req, res) => {
 
   const arr_for_ticket = req.body.cartItems.map((item) => {
     return {
-      bought_tickets: {
-        id: item._id,
-        // visible: item.visible,
-        // remind: item.remind,
-      },
+      id: item._id,
+      // visible: item.visible,
+      // remind: item.remind,
+      quantity: item.quantity,
     };
   });
 
