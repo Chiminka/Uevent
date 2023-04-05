@@ -420,6 +420,7 @@ const payment = async (req, res) => {
     const promo = await Promocode.findOneAndDelete({
       users: req.user.id,
       event: item.id,
+      promo_code: item.promo_code,
     }).select("users");
     let price = item.price;
     // 4%
@@ -445,18 +446,31 @@ const payment = async (req, res) => {
 
   const line_items = await Promise.all(line_items_promises);
 
+  const arr_for_ticket = req.body.cartItems.map((item) => {
+    return {
+      bought_tickets: {
+        id: item._id,
+        // visible: item.visible,
+        // remind: item.remind,
+      },
+    };
+  });
+
   const session = await stripe.checkout.sessions.create({
     line_items,
     mode: "payment",
-    success_url: `${process.env.BASE_URL}checkout-success`,
+    success_url: `${process.env.BASE_URL}/checkout-success/${JSON.stringify(
+      arr_for_ticket
+    )}`,
     cancel_url: `${process.env.BASE_URL}cart`,
   });
-  console.log(session);
+
   res.send({ url: session.url });
 };
 const after_buying_action = async (req) => {
   const user = await User.findById(req.user.id);
-  let { visible, remind, bought_events } = req.body;
+  console.log("hello");
+  const cartItems = JSON.parse(req.params.cartItems);
 
   const options = {
     day: "2-digit",
@@ -466,8 +480,8 @@ const after_buying_action = async (req) => {
     minute: "2-digit",
   };
 
-  for (let i = 0; i < bought_events.length; i++) {
-    const event = await Event.findById(bought_events[i]);
+  for (let i = 0; i < bought_tickets.id.length; i++) {
+    const event = await Event.findById(bought_tickets[i].id);
     const company = await Company.findById(event.author);
 
     const date = event.date_event.toLocaleString("ru-RU", options);
@@ -500,12 +514,12 @@ const after_buying_action = async (req) => {
 
     // here made a ticket
     const newTicket = new Ticket({
-      visible,
-      remind,
+      // visible: bought_tickets.visible,
+      // remind: bought_tickets.remind,
       user: req.user.id,
       event: event.id,
     });
-    await newTicket.save();
+    // await newTicket.save();
   }
 
   // Определяем массив

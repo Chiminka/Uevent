@@ -39,9 +39,9 @@ router.patch(
 );
 
 // Send tickets on the mail, add to members after buying and get promo code +
-// http://localhost:3002/api/events/after-the-payment
+// http://localhost:3002/checkout-success
 router.post(
-  "/after-the-payment",
+  "/checkout-success/:cartItems",
   verifyJWT,
   eventController.after_buying_action
 );
