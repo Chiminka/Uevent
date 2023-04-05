@@ -41,7 +41,7 @@ router.patch(
 // Send tickets on the mail, add to members after buying and get promo code +
 // http://localhost:3002/checkout-success
 router.post(
-  "/checkout-success/:cartItems",
+  "/checkout-success",
   verifyJWT,
   eventController.after_buying_action
 );
