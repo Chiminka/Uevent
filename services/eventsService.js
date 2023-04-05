@@ -461,7 +461,7 @@ const payment = async (req, res) => {
     mode: "payment",
    success_url: `${
       process.env.BASE_URL
-    }checkout-success/cartItems=${encodeURIComponent(
+    }checkout-success/${encodeURIComponent(
       JSON.stringify(arr_for_ticket)
     )}`,
     cancel_url: `${process.env.BASE_URL}cart`,
