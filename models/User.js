@@ -49,5 +49,17 @@ const UserSchema = new mongoose.Schema({
       default: [],
     },
   ],
+  social_net: [
+    {
+      type: {
+        type: String,
+        default: "",
+      },
+      link: {
+        type: String,
+        default: "",
+      },
+    },
+  ],
 });
 export default mongoose.model("User", UserSchema);

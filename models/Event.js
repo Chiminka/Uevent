@@ -13,6 +13,9 @@ const EventSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  date_end: {
+    type: Date,
+  },
   date_post: {
     type: Date,
     required: false,

@@ -17,8 +17,6 @@ import Theme from "../models/Theme.js";
 import fs from "fs";
 import util from "util";
 
-console.log(process.env.STRIPE_KEY);
-
 const stripe = Stripe(
   "sk_test_51Mbl5wGCxeoiwh2aTPy6BSwW9QSyQ0cIcI6yXJp7VVxZfRSZotUrxcRT2wqgY0I11ONDTaAJGIjtgno2pMXyp9mR00PkoU2gNj"
 );
@@ -135,6 +133,7 @@ const createEvent = async (req) => {
     title,
     description,
     date_event,
+    date_end,
     date_post,
     tickets,
     price,
@@ -162,6 +161,12 @@ const createEvent = async (req) => {
       ? (date_event = date_e)
       : (date_event = date_event);
   }
+  if (date_end) {
+    const fdate_e = new Date(`${date_end}T00:00:00`);
+    date_end = !date_end.includes("T")
+      ? (date_end = fdate_e)
+      : (date_end = date_end);
+  }
   if (date_post) {
     const date_p = new Date(`${date_post}T00:00:00`);
     date_post = !date_post.includes("T")
@@ -178,6 +183,7 @@ const createEvent = async (req) => {
     price,
     description,
     date_event,
+    date_end,
     date_post,
     tickets,
     location,
@@ -318,6 +324,7 @@ const updateEvent = async (req) => {
     title,
     description,
     date_event,
+    date_end,
     date_post,
     formats,
     themes,
@@ -395,6 +402,12 @@ const updateEvent = async (req) => {
         ? (date_event = date_e)
         : (date_event = date_event);
     }
+    if (date_end) {
+      const fdate_e = new Date(`${date_end}T00:00:00`);
+      date_end = !date_end.includes("T")
+        ? (date_end = fdate_e)
+        : (date_end = date_end);
+    }
     if (date_post) {
       const date_p = new Date(`${date_post}T00:00:00`);
       date_post = !date_post.includes("T")
@@ -408,6 +421,7 @@ const updateEvent = async (req) => {
     if (description) event.description = description;
     if (date_post) event.date_post = date_post;
     if (date_event) event.date_event = date_event;
+    if (date_end) event.date_end = date_end;
     if (tickets) event.tickets = tickets;
     if (location) event.location = location;
     if (price) event.price = price;
@@ -419,11 +433,17 @@ const updateEvent = async (req) => {
 };
 const payment = async (req, res) => {
   const line_items_promises = req.body.cartItems.map(async (item) => {
-    const promo = await Promocode.findOneAndDelete({
-      users: req.user.id,
-      event: item.id,
-      promo_code: item.promo_code,
-    }).select("users");
+    const promo = await Promocode.findOneAndUpdate(
+      {
+        event: item._id,
+        promo_code: item.promocode,
+        users: req.user.id,
+      },
+      {
+        $pull: { users: req.user.id },
+      },
+      { new: true }
+    );
     let price = item.price;
     // 4%
     if (promo) {
@@ -451,13 +471,12 @@ const payment = async (req, res) => {
   const arr_for_ticket = req.body.cartItems.map((item) => {
     return {
       id: item._id,
-      // visible: item.visible,
-      // remind: item.remind,
+      visible: item.showMe,
+      remind: item.remindMe,
       quantity: item.quantity,
+      price: price,
     };
   });
-
-  console.log(arr_for_ticket);
 
   const session = await stripe.checkout.sessions.create({
     line_items,
@@ -498,7 +517,7 @@ const after_buying_action = async (req) => {
       html: `<h1>${user.full_name} bought ${bought_tickets[i].quantity} tickets from "Afisha" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location.description}</h2>
-        <h1>Was paid: ${event.price}</h1>`,
+        <h1>Was paid: ${bought_tickets[i].price}</h1>`,
     });
 
     console.log(bought_tickets[i].quantity);
@@ -511,18 +530,20 @@ const after_buying_action = async (req) => {
         html: `<h1>${user.full_name} bought ${bought_tickets[i].quantity} tickets from "Afisha" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location.description}</h2>
-        <h1>Was paid: ${event.price}</h1>`,
+        <h1>Was paid: ${bought_tickets[i].price}</h1>`,
       });
     }
 
     event.tickets = event.tickets - 1;
     await event.save();
 
+    let meVisible = bought_tickets[i].visible === true ? "yes" : "no";
+
     // here made a ticket
     for (let j = 0; j < bought_tickets[i].quantity; j++) {
       console.log(i);
       const newTicket = new Ticket({
-        visible: bought_tickets[i].visible,
+        visible: meVisible,
         remind: bought_tickets[i].remind,
         user: req.user.id,
         event: event.id,

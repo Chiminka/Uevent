@@ -77,7 +77,8 @@ const loadProfilePhoto = async (req) => {
   return user;
 };
 const updateUser = async (req) => {
-  const { full_name, username, password, email, companies } = req.body;
+  const { full_name, username, password, email, companies, my_social_net } =
+    req.body;
   const user = await User.findById(req.params.id);
 
   if (req.user._id.equals(user._id)) {
@@ -91,6 +92,8 @@ const updateUser = async (req) => {
       }
     }
     if (companies) user.companies = companies;
+    if (my_social_net) user.social_net = my_social_net;
+    console.log(my_social_net);
     if (password) {
       const salt = bcrypt.genSaltSync(10);
       const hash = bcrypt.hashSync(password, salt);
