@@ -433,16 +433,16 @@ const updateEvent = async (req) => {
 };
 const payment = async (req, res) => {
   const line_items_promises = req.body.cartItems.map(async (item) => {
-    const promo = await Promocode.findOneAndUpdate(
+    const promo = await Promocode.findOne(
       {
         event: item._id,
         promo_code: item.promocode,
         users: req.user.id,
-      },
-      {
-        $pull: { users: req.user.id },
-      },
-      { new: true }
+      }
+      // {
+      //   $pull: { users: req.user.id },
+      // },
+      // { new: true }
     );
     let price = item.price;
     // 4%
@@ -469,12 +469,18 @@ const payment = async (req, res) => {
   const line_items = await Promise.all(line_items_promises);
 
   const arr_for_ticket = req.body.cartItems.map((item) => {
+    let price = item.price;
+    // 4%
+    if (promo) {
+      price = price * 0.96;
+    }
     return {
       id: item._id,
       visible: item.showMe,
       remind: item.remindMe,
       quantity: item.quantity,
       price: price,
+      promo: item.promocode,
     };
   });
 
