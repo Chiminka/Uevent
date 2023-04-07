@@ -14,7 +14,10 @@ const mkdir = util.promisify(fs.mkdir);
 
 const getMyTickets = async (req) => {
   // получить все приобретенные билеты
-  const tickets = await Ticket.find();
+  const tickets = await Ticket.find().populate({
+    path: "event",
+    populate: [{ path: "themes" }, { path: "formats" }],
+  });
   let mas = [];
   for (let i = 0; i < tickets.length; i++) {
     if (tickets[i].user.toString() === req.user._id.toString()) {
