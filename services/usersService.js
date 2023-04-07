@@ -79,7 +79,7 @@ const loadProfilePhoto = async (req) => {
   user.save();
   return user;
 };
-const updateUser = async (req) => {
+const updateUser = async (req, res) => {
   const { full_name, username, password, email, companies, my_social_net } =
     req.body;
   const user = await User.findById(req.params.id);
@@ -120,6 +120,33 @@ const updateUser = async (req) => {
         process.env.JWT_SECRET,
         { expiresIn: "10m" }
       );
+
+      const accessToken = jwt.sign(
+        {
+          UserInfo: {
+            email: user.email,
+          },
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "15m" }
+      );
+
+      const refreshToken = jwt.sign(
+        { email: user.email },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      // Create secure cookie with refresh token
+      res.cookie("jwt", refreshToken, {
+        httpOnly: true, //accessible only by web server
+        maxAge: 7 * 24 * 60 * 60 * 1000, //cookie expiry: set to match rT
+      });
+      // Create secure cookie with refresh token
+      res.cookie("accessToken", accessToken, {
+        httpOnly: true, //accessible only by web server
+        maxAge: 7 * 24 * 60 * 60 * 1000, //cookie expiry: set to match rT
+      });
 
       // verification email
       const url = `${process.env.BASE_URL}verify/${v_token}`;

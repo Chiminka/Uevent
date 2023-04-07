@@ -39,7 +39,7 @@ export class UserController {
   }
   async updateUser(req, res) {
     try {
-      const updateUser = await userService.updateUser(req);
+      const updateUser = await userService.updateUser(req, res);
       res.json(updateUser);
     } catch (error) {
       console.log(error);
