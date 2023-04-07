@@ -287,16 +287,10 @@ const deleteEvent = async (req) => {
         ),
       ]);
       // удаляется промо на этот ивент и сам ивент
-      await Promise.all([
-        Event.findByIdAndDelete(req.params.eventId),
-        Promocode.findOneAndDelete({ event: req.params.eventId }),
-      ]);
+      await Promise.all([Event.findByIdAndDelete(req.params.eventId)]);
       return { message: "Event was deleted and members were warned" };
     } else {
-      await Promise.all([
-        Event.findByIdAndDelete(req.params.eventId),
-        Promocode.findOneAndDelete({ event: req.params.eventId }),
-      ]);
+      await Promise.all([Event.findByIdAndDelete(req.params.eventId)]);
       return { message: "Event was deleted" };
     }
   } else return { message: "No access!" };
@@ -486,7 +480,7 @@ const after_buying_action = async (req) => {
     const event = await Event.findById(bought_tickets[i].id);
     const company = await Company.findById(event.author);
 
-    const promo = await Promocode.findOneAndUpdate(
+    await Promocode.findOneAndUpdate(
       {
         promo_code: bought_tickets[i].promo,
         users: req.user.id,
@@ -504,10 +498,12 @@ const after_buying_action = async (req) => {
       from: company.email,
       to: user.email,
       subject: `Your tickets from "Afisha"`,
-      html: `<h1>${user.full_name} bought ${bought_tickets[i].quantity} tickets from "Afisha" on ${event.title}</h1>
+      html: `<h1>${user.full_name} bought ${
+        bought_tickets[i].quantity
+      } tickets from "Afisha" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location.description}</h2>
-        <h1>Was paid: ${bought_tickets[i].price}</h1>`,
+        <h1>Was paid: ${bought_tickets[i].price / 100}</h1>`,
     });
 
     if (event.notifications === true) {
@@ -515,10 +511,12 @@ const after_buying_action = async (req) => {
         from: process.env.USER,
         to: company.email,
         subject: `The new member on your event from "Afisha"`,
-        html: `<h1>${user.full_name} bought ${bought_tickets[i].quantity} tickets from "Afisha" on ${event.title}</h1>
+        html: `<h1>${user.full_name} bought ${
+          bought_tickets[i].quantity
+        } tickets from "Afisha" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location.description}</h2>
-        <h1>Was paid: ${bought_tickets[i].price}</h1>`,
+        <h1>Was paid: ${bought_tickets[i].price / 100}</h1>`,
       });
     }
 

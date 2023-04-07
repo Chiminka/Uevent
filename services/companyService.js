@@ -5,6 +5,7 @@ import mailTransport from "../utils/mailTransport.js";
 import Company from "../models/Company.js";
 import Ticket from "../models/Ticket.js";
 import promo from "../utils/create_promo.js";
+import Promocode from "../models/Promocode.js";
 
 // если компания удалила себя - оповестить
 const deleteCompany = async (req, res) => {
@@ -34,7 +35,10 @@ const deleteCompany = async (req, res) => {
           subject: `Company ${company.company_name} no longer in service. The company has been deleted.`,
         });
       }
-    await Company.findByIdAndDelete(req.params.id);
+    await Promise.all([
+      Company.findByIdAndDelete(req.params.id),
+      Promocode.findOneAndDelete({ company: req.params.id }),
+    ]);
     const companyID = req.params.id;
     const events = await Event.find({ author: companyID });
 
