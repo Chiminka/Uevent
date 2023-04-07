@@ -433,17 +433,11 @@ const updateEvent = async (req) => {
 };
 const payment = async (req, res) => {
   const line_items_promises = req.body.cartItems.map(async (item) => {
-    const promo = await Promocode.findOne(
-      {
-        event: item._id,
-        promo_code: item.promocode,
-        users: req.user.id,
-      }
-      // {
-      //   $pull: { users: req.user.id },
-      // },
-      // { new: true }
-    );
+    const promo = await Promocode.findOne({
+      event: item._id,
+      promo_code: item.promocode,
+      users: req.user.id,
+    });
     let price = item.price;
     // 4%
     if (promo) {
@@ -457,7 +451,10 @@ const payment = async (req, res) => {
           description: item.description,
           metadata: {
             date: item.date_event,
-            id: item.id,
+            id: item._id,
+            visible: item.showMe,
+            remind: item.remindMe,
+            promo: item.promocode,
           },
         },
         unit_amount: price * 100,
@@ -468,27 +465,21 @@ const payment = async (req, res) => {
 
   const line_items = await Promise.all(line_items_promises);
 
-  const arr_for_ticket = req.body.cartItems.map((item) => {
-    let price = item.price;
-    // 4%
-    if (promo) {
-      price = price * 0.96;
-    }
-    return {
-      id: item._id,
-      visible: item.showMe,
-      remind: item.remindMe,
-      quantity: item.quantity,
-      price: price,
-      promo: item.promocode,
-    };
-  });
+  // line_items.map(async (item) => {
+  //   console.log(
+  //     item.price_data.product_data.metadata.id,
+  //     item.price_data.product_data.metadata.visible,
+  //     item.price_data.product_data.metadata.remind,
+  //     item.price_data.product_data.metadata.promo,
+  //     item.price_data.unit_amount / 100
+  //   );
+  // });
 
   const session = await stripe.checkout.sessions.create({
     line_items,
     mode: "payment",
     success_url: `${process.env.BASE_URL}checkout-success/${encodeURIComponent(
-      JSON.stringify(arr_for_ticket)
+      JSON.stringify(line_items)
     )}`,
     cancel_url: `${process.env.BASE_URL}cart`,
   });
@@ -509,8 +500,18 @@ const after_buying_action = async (req) => {
 
   for (let i = 0; i < bought_tickets.length; i++) {
     const event = await Event.findById(bought_tickets[i].id);
-    console.log("1", event, bought_tickets[i].id);
     const company = await Company.findById(event.author);
+    await Promocode.findOneAndUpdate(
+      {
+        event: event.id,
+        promo_code: bought_tickets[i].promo,
+        users: req.user.id,
+      },
+      {
+        $pull: { users: req.user.id },
+      },
+      { new: true }
+    );
 
     const date = event.date_event.toLocaleString("ru-RU", options);
 
@@ -520,10 +521,12 @@ const after_buying_action = async (req) => {
       from: company.email,
       to: user.email,
       subject: `Your tickets from "Afisha"`,
-      html: `<h1>${user.full_name} bought ${bought_tickets[i].quantity} tickets from "Afisha" on ${event.title}</h1>
+      html: `<h1>${user.full_name} bought ${
+        bought_tickets[i].quantity
+      } tickets from "Afisha" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location.description}</h2>
-        <h1>Was paid: ${bought_tickets[i].price}</h1>`,
+        <h1>Was paid: ${bought_tickets[i].price / 100}</h1>`,
     });
 
     console.log(bought_tickets[i].quantity);
@@ -533,10 +536,12 @@ const after_buying_action = async (req) => {
         from: process.env.USER,
         to: company.email,
         subject: `The new member on your event from "Afisha"`,
-        html: `<h1>${user.full_name} bought ${bought_tickets[i].quantity} tickets from "Afisha" on ${event.title}</h1>
+        html: `<h1>${user.full_name} bought ${
+          bought_tickets[i].quantity
+        } tickets from "Afisha" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location.description}</h2>
-        <h1>Was paid: ${bought_tickets[i].price}</h1>`,
+        <h1>Was paid: ${bought_tickets[i].price / 100}</h1>`,
       });
     }
 
