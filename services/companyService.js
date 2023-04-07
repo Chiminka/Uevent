@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import mailTransport from "../utils/mailTransport.js";
 import Company from "../models/Company.js";
 import Ticket from "../models/Ticket.js";
+import promo from "../utils/create_promo.js";
 
 // если компания удалила себя - оповестить
 const deleteCompany = async (req, res) => {
@@ -181,6 +182,20 @@ const createMyCompany = async (req) => {
   const user = await User.findById(req.user.id);
   user.companies.push(newCompany.id);
   user.save();
+
+  // создаем новый объект Date с текущей датой и временем
+  var currentDate = new Date();
+
+  // добавляем 3 недели к текущей дате
+  var futureDate = new Date(currentDate.getTime() + 21 * 24 * 60 * 60 * 1000);
+
+  const newPromo = new Promocode({
+    company: newCompany.id,
+    promo_code: promo(),
+    expiration_date: futureDate,
+  });
+
+  await newPromo.save();
 
   // verification email
   const url = `${process.env.BASE_URL}verify/${v_token}`;

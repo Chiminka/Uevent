@@ -11,7 +11,11 @@ const Promo_codeSchema = new mongoose.Schema({
       ref: "User",
     },
   ],
-  event: { type: mongoose.Schema.Types.ObjectId, ref: "Event", required: true },
+  company: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Company",
+    required: true,
+  },
   expiration_date: {
     type: Date,
     required: true,

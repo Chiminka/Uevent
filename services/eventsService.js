@@ -6,7 +6,6 @@ import Ticket from "../models/Ticket.js";
 import Company from "../models/Company.js";
 import Promocode from "../models/Promocode.js";
 
-import promo from "../utils/create_promo.js";
 import { format_sort, themes_sort, date_sort } from "../utils/sorting.js";
 import mailTransport from "../utils/mailTransport.js";
 import Stripe from "stripe";
@@ -194,20 +193,6 @@ const createEvent = async (req) => {
   });
 
   await newEvent.save();
-
-  // создаем новый объект Date с текущей датой и временем
-  var currentDate = new Date();
-
-  // добавляем 3 недели к текущей дате
-  var futureDate = new Date(currentDate.getTime() + 21 * 24 * 60 * 60 * 1000);
-
-  const newPromo = new Promocode({
-    event: newEvent.id,
-    promo_code: promo(),
-    expiration_date: futureDate,
-  });
-
-  await newPromo.save();
 
   const users = await User.find();
   let arr_subs = [];
@@ -434,7 +419,6 @@ const updateEvent = async (req) => {
 const payment = async (req, res) => {
   const line_items_promises = req.body.cartItems.map(async (item) => {
     const promo = await Promocode.findOne({
-      event: item._id,
       promo_code: item.promocode,
       users: req.user.id,
     });
@@ -501,9 +485,9 @@ const after_buying_action = async (req) => {
   for (let i = 0; i < bought_tickets.length; i++) {
     const event = await Event.findById(bought_tickets[i].id);
     const company = await Company.findById(event.author);
-    await Promocode.findOneAndUpdate(
+
+    const promo = await Promocode.findOneAndUpdate(
       {
-        event: event.id,
         promo_code: bought_tickets[i].promo,
         users: req.user.id,
       },
@@ -515,33 +499,26 @@ const after_buying_action = async (req) => {
 
     const date = event.date_event.toLocaleString("ru-RU", options);
 
-    console.log(user.email);
     // после оплаты отправляются билеты по почте и добавляется юзер в мемберы ивента, юзеру зачисляется какой-то промокод со скидкой, -1 билет в счетчике билетов ивента
     mailTransport().sendMail({
       from: company.email,
       to: user.email,
       subject: `Your tickets from "Afisha"`,
-      html: `<h1>${user.full_name} bought ${
-        bought_tickets[i].quantity
-      } tickets from "Afisha" on ${event.title}</h1>
+      html: `<h1>${user.full_name} bought ${bought_tickets[i].quantity} tickets from "Afisha" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location.description}</h2>
-        <h1>Was paid: ${bought_tickets[i].price / 100}</h1>`,
+        <h1>Was paid: ${bought_tickets[i].price}</h1>`,
     });
-
-    console.log(bought_tickets[i].quantity);
 
     if (event.notifications === true) {
       mailTransport().sendMail({
         from: process.env.USER,
         to: company.email,
         subject: `The new member on your event from "Afisha"`,
-        html: `<h1>${user.full_name} bought ${
-          bought_tickets[i].quantity
-        } tickets from "Afisha" on ${event.title}</h1>
+        html: `<h1>${user.full_name} bought ${bought_tickets[i].quantity} tickets from "Afisha" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location.description}</h2>
-        <h1>Was paid: ${bought_tickets[i].price / 100}</h1>`,
+        <h1>Was paid: ${bought_tickets[i].price}</h1>`,
       });
     }
 
@@ -552,7 +529,6 @@ const after_buying_action = async (req) => {
 
     // here made a ticket
     for (let j = 0; j < bought_tickets[i].quantity; j++) {
-      console.log(i);
       const newTicket = new Ticket({
         visible: meVisible,
         remind: bought_tickets[i].remind,
@@ -573,17 +549,16 @@ const after_buying_action = async (req) => {
   if (rand !== null) {
     promo = await Promocode.findById(arr[rand]);
     if (!promo.users.includes(req.user.id)) {
-      console.log(promo);
       promo.users.push(req.user.id);
       await promo.save();
-      const nameEvent = await Event.findById(promo.event);
+      const nameCompany = await Company.findById(promo.company);
 
       if (promo.promo_code.length > 0) {
         mailTransport().sendMail({
           from: process.env.USER,
           to: user.email,
           subject: `You got a promo-code! From site Afisha`,
-          html: `<h1>${user.full_name}, you got a promo-code for event ${nameEvent.title}</h1>
+          html: `<h1>${user.full_name}, you got a promo-code for events by company ${nameCompany.company_name}</h1>
         <h2>Put it in and get 4% discount!</h2>
         <h2>${promo.promo_code}</h2>`,
         });
