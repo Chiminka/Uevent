@@ -80,9 +80,23 @@ const loadProfilePhoto = async (req) => {
   return user;
 };
 const updateUser = async (req, res) => {
-  const { full_name, username, password, email, companies, my_social_net } =
-    req.body;
+  const {
+    full_name,
+    username,
+    password,
+    oldPassword,
+    email,
+    companies,
+    my_social_net,
+  } = req.body;
   const user = await User.findById(req.params.id);
+
+  if (password) {
+    const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordCorrect) {
+      return { success: false, message: "Uncorrect password" };
+    }
+  }
 
   let fileName = "";
   if (req.files) {
