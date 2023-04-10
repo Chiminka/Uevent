@@ -84,6 +84,24 @@ const updateUser = async (req, res) => {
     req.body;
   const user = await User.findById(req.params.id);
 
+  let fileName = "";
+  if (req.files) {
+    fileName = Date.now().toString() + req.files.files.name;
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const uploadDir = path.join(__dirname, "..", "uploads");
+    try {
+      await mkdir(uploadDir);
+    } catch (err) {
+      if (err.code !== "EEXIST") throw err;
+    }
+    req.files.files.mv(path.join(uploadDir, fileName));
+  }
+
+  if (fileName.length < 1) {
+    fileName = user.avatar;
+  }
+  user.avatar = fileName;
+
   if (req.user._id.equals(user._id)) {
     user.full_name = full_name;
     if (username) {
@@ -95,8 +113,8 @@ const updateUser = async (req, res) => {
       }
     }
     if (companies) user.companies = companies;
+    console.log(user.companies, companies);
     if (my_social_net) user.social_net = my_social_net;
-    console.log(my_social_net);
     if (password) {
       const salt = bcrypt.genSaltSync(10);
       const hash = bcrypt.hashSync(password, salt);
