@@ -88,14 +88,14 @@ const updateUser = async (req, res) => {
     email,
     companies,
     my_social_net,
+    subscriptions_companies,
+    subscriptions_events,
   } = req.body;
   const user = await User.findById(req.params.id);
 
-  if (password) {
-    const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password);
-    if (!isPasswordCorrect) {
-      return { success: false, message: "Uncorrect password" };
-    }
+  const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password);
+  if (!isPasswordCorrect) {
+    return { success: false, message: "Uncorrect password" };
   }
 
   let fileName = "";
@@ -117,8 +117,9 @@ const updateUser = async (req, res) => {
   user.avatar = fileName;
 
   if (req.user._id.equals(user._id)) {
-    user.full_name = full_name;
-    if (username) {
+    if (full_name && full_name !== user.full_name) user.full_name = full_name;
+
+    if (username && username !== user.username) {
       user.username = username;
       if (!username.match(/^[a-zA-Z0-9._]*$/)) {
         return {
@@ -126,15 +127,45 @@ const updateUser = async (req, res) => {
         };
       }
     }
-    if (companies) user.companies = companies;
-    console.log(user.companies, companies);
-    if (my_social_net) user.social_net = my_social_net;
-    if (password) {
-      const salt = bcrypt.genSaltSync(10);
-      const hash = bcrypt.hashSync(password, salt);
-      user.password = hash;
+
+    if (
+      companies &&
+      JSON.stringify(companies) !== JSON.stringify(user.companies)
+    ) {
+      user.companies = companies;
     }
-    if (email) {
+
+    if (
+      subscriptions_companies &&
+      JSON.stringify(subscriptions_companies) !==
+        JSON.stringify(user.subscriptions_companies)
+    )
+      user.subscriptions_companies = subscriptions_companies;
+
+    if (
+      subscriptions_events &&
+      JSON.stringify(subscriptions_events) !==
+        JSON.stringify(user.subscriptions_events)
+    )
+      user.subscriptions_events = subscriptions_events;
+
+    if (
+      my_social_net &&
+      JSON.stringify(my_social_net) !== JSON.stringify(user.social_net)
+    ) {
+      user.social_net = my_social_net;
+    }
+
+    if (password) {
+      const theSamePassword = await bcrypt.compare(password, user.password);
+      if (!theSamePassword) {
+        const salt = bcrypt.genSaltSync(10);
+        const hash = bcrypt.hashSync(password, salt);
+        user.password = hash;
+      }
+    }
+
+    if (email && email !== user.email) {
       var validRegex =
         /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
@@ -194,11 +225,12 @@ const updateUser = async (req, res) => {
         message: "An Email sent to your account please verify",
       };
     }
+
     await user.save();
     return user;
   } else return { message: "No access!" };
 };
-const subscriptionUser = async (req) => {
+const subscriptionTo = async (req) => {
   const user = await User.findById(req.user.id);
   if (
     (await Event.findById(req.params.id)) &&
@@ -220,7 +252,7 @@ export default {
   getMyTickets,
   deleteUser,
   updateUser,
-  subscriptionUser,
+  subscriptionTo,
   getMyCompanies,
   loadProfilePhoto,
 };

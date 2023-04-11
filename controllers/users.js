@@ -46,10 +46,10 @@ export class UserController {
       res.json({ message: "Updating user error" });
     }
   }
-  async subscriptionUser(req, res) {
+  async subscriptionTo(req, res) {
     try {
-      const subscriptionUser = await userService.subscriptionUser(req);
-      res.json(subscriptionUser);
+      const subscriptionTo = await userService.subscriptionTo(req);
+      res.json(subscriptionTo);
     } catch (error) {
       console.log(error);
       res.json({ message: "Updating user error" });

@@ -26,12 +26,8 @@ router.delete("/:id", verifyJWT, userController.deleteUser);
 // http://localhost:3002/api/users/:id
 router.patch("/:id", verifyJWT, userController.updateUser);
 
-// Make a subscription to a company and its changes +
-// http://localhost:3002/api/users/subscriptionToUser/:id
-router.patch(
-  "/subscriptionToUser/:id",
-  verifyJWT,
-  userController.subscriptionUser
-);
+// Make a subscription to a company or event and its changes +
+// http://localhost:3002/api/users/subscriptionTo/:id
+router.get("/subscriptionTo/:id", verifyJWT, userController.subscriptionTo);
 
 export default router;

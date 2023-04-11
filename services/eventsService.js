@@ -19,6 +19,7 @@ import util from "util";
 const stripe = Stripe(
   "sk_test_51Mbl5wGCxeoiwh2aTPy6BSwW9QSyQ0cIcI6yXJp7VVxZfRSZotUrxcRT2wqgY0I11ONDTaAJGIjtgno2pMXyp9mR00PkoU2gNj"
 );
+
 const mkdir = util.promisify(fs.mkdir);
 
 const getEventById = async (id, userID) => {
@@ -443,26 +444,40 @@ const payment = async (req, res) => {
 
   const line_items = await Promise.all(line_items_promises);
 
-  // line_items.map(async (item) => {
-  //   console.log(
-  //     item.price_data.product_data.metadata.id,
-  //     item.price_data.product_data.metadata.visible,
-  //     item.price_data.product_data.metadata.remind,
-  //     item.price_data.product_data.metadata.promo,
-  //     item.price_data.unit_amount / 100
-  //   );
-  // });
+  const items = line_items.map(async (item) => {
+    const { id, visible, remind, promo } =
+      item.price_data.product_data.metadata;
+    const price = item.price_data.unit_amount / 100;
+    return { id, visible, remind, promo, price };
+  });
+
+  const items_for_tickets = await Promise.all(items);
+
+  console.log(items_for_tickets);
 
   const session = await stripe.checkout.sessions.create({
     line_items,
     mode: "payment",
     success_url: `${process.env.BASE_URL}checkout-success/${encodeURIComponent(
-      JSON.stringify(line_items)
+      JSON.stringify(items_for_tickets)
     )}`,
     cancel_url: `${process.env.BASE_URL}cart`,
   });
 
   res.send({ url: session.url });
+
+  // Получаем информацию о сессии
+  const sessionData = await stripe.checkout.sessions.retrieve(session.id);
+  console.log(sessionData, sessionData.payment_intent);
+
+  const paymentIntentId = "";
+  if (
+    sessionData.payment_intent &&
+    sessionData.payment_intent.status === "succeeded"
+  ) {
+    paymentIntentId = sessionData.payment_intent.id;
+  }
+  console.log(paymentIntentId);
 };
 const after_buying_action = async (req) => {
   const user = await User.findById(req.user.id);

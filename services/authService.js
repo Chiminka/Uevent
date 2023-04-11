@@ -178,11 +178,9 @@ const getMe = async (user_id) => {
   const user = await User.findById(user_id)
     .populate({
       path: "subscriptions_events",
-      select: "id title",
     })
     .populate({
       path: "subscriptions_companies",
-      select: "id company_name",
     })
     .populate("companies");
 
