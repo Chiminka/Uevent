@@ -214,7 +214,7 @@ const updateUser = async (req, res) => {
     }
 
     await user.save();
-    return user;
+    return { message: "User was updated" };
   } else return { message: "No access!" };
 };
 const subscriptionTo = async (req) => {
