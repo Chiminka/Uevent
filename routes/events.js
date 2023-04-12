@@ -50,7 +50,7 @@ router.post(
 // http://localhost:3002/api/events/create-checkout-session
 router.post("/create-checkout-session", verifyJWT, eventController.payment);
 
-// Webhook Stripe -
+// Webhook Stripe +
 // http://localhost:3002/api/events/webhook
 router.post("/webhook", eventController.webhook);
 

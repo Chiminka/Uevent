@@ -19,19 +19,19 @@ router.get("/companies", verifyJWT, userController.getMyCompanies);
 router.patch("/:id/pic-load", verifyJWT, userController.loadProfilePhoto);
 
 // Delete user by id +
-// http://localhost:3002/api/users/:id
-router.delete("/:id", verifyJWT, userController.deleteUser);
+// http://localhost:3002/api/users
+router.delete("/", verifyJWT, userController.deleteUser);
 
 // Update user by id +
-// http://localhost:3002/api/users/:id
-router.patch("/:id", verifyJWT, userController.updateUser);
+// http://localhost:3002/api/users
+router.patch("/", verifyJWT, userController.updateUser);
 
 // Make a subscription to a company or event and its changes +
 // http://localhost:3002/api/users/subscriptionTo/:id
 router.get("/subscriptionTo/:id", verifyJWT, userController.subscriptionTo);
 
 // Update user's subs by id +
-// http://localhost:3002/api/users/:id/subs
-router.patch("/:id/subs", verifyJWT, userController.updateMySubs);
+// http://localhost:3002/api/users/subs
+router.patch("/subs", verifyJWT, userController.updateMySubs);
 
 export default router;

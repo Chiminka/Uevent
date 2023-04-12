@@ -37,11 +37,11 @@ const getMyCompanies = async (req) => {
   return mas;
 };
 const deleteUser = async (req, res) => {
-  const user = await User.findById(req.params.id);
-  const userID = req.params.id;
+  const user = await User.findById(req.user.id);
+  const userID = req.user.id;
 
   if (req.user._id.equals(user._id)) {
-    await User.findByIdAndDelete(req.params.id);
+    await User.findByIdAndDelete(req.user.id);
     const cookies = req.cookies;
     if (!cookies?.jwt) return res.sendStatus(204); //No content
     res.clearCookie("jwt", {
@@ -82,25 +82,23 @@ const loadProfilePhoto = async (req) => {
 const updateMySubs = async (req) => {
   const { subscriptions_companies, subscriptions_events } = req.body;
 
-  const user = await User.findById(req.params.id)
+  const user = await User.findById(req.user.id);
+
+  console.log(subscriptions_companies);
+
+  if (subscriptions_companies !== undefined)
+    user.subscriptions_companies = subscriptions_companies;
+
+  if (subscriptions_events !== undefined)
+    user.subscriptions_events = subscriptions_events;
+
+  const updatedUser = await User.findByIdAndUpdate(req.user.id, user, {
+    new: true,
+  })
     .populate("subscriptions_companies")
     .populate("subscriptions_events");
 
-  if (
-    subscriptions_companies &&
-    JSON.stringify(subscriptions_companies) !==
-      JSON.stringify(user.subscriptions_companies)
-  )
-    user.subscriptions_companies = subscriptions_companies;
-
-  if (
-    subscriptions_events &&
-    JSON.stringify(subscriptions_events) !==
-      JSON.stringify(user.subscriptions_events)
-  )
-    user.subscriptions_events = subscriptions_events;
-  await user.save();
-  return user;
+  return updatedUser;
 };
 const updateUser = async (req, res) => {
   const {
@@ -112,7 +110,7 @@ const updateUser = async (req, res) => {
     companies,
     my_social_net,
   } = req.body;
-  const user = await User.findById(req.params.id);
+  const user = await User.findById(req.user.id);
 
   const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password);
   if (!isPasswordCorrect) {
@@ -223,19 +221,24 @@ const subscriptionTo = async (req) => {
   const user = await User.findById(req.user.id)
     .populate("subscriptions_events")
     .populate("subscriptions_companies");
+
   if (
     (await Event.findById(req.params.id)) &&
-    !user.subscriptions_events.includes(req.params.id)
+    !user.subscriptions_events.some((event) => event._id.equals(req.params.id))
   ) {
-    user.subscriptions_events.push(req.params.id);
-    user.save();
+    const event = await Event.findById(req.params.id);
+    user.subscriptions_events.push(event);
   } else if (
     (await Company.findById(req.params.id)) &&
-    !user.subscriptions_companies.includes(req.params.id)
+    !user.subscriptions_companies.some((company) =>
+      company._id.equals(req.params.id)
+    )
   ) {
-    user.subscriptions_companies.push(req.params.id);
-    user.save();
+    const company = await Company.findById(req.params.id);
+    user.subscriptions_companies.push(company);
   }
+
+  await user.save();
   return user;
 };
 
