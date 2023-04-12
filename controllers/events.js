@@ -70,6 +70,15 @@ export class EventController {
       res.json({ message: "Buying tickets error" });
     }
   }
+  async webhook(req, res) {
+    try {
+      const webhook = await eventService.webhook(req, res);
+      res.json(webhook);
+    } catch (error) {
+      console.log(error);
+      res.json({ message: "Webhook error" });
+    }
+  }
   async after_buying_action(req, res) {
     try {
       const after_buying_action = await eventService.after_buying_action(req);

@@ -1,6 +1,5 @@
 import Event from "../models/Event.js";
 import User from "../models/User.js";
-// import Category from "../models/Category.js";
 import Comment from "../models/Comment.js";
 import Ticket from "../models/Ticket.js";
 import Company from "../models/Company.js";
@@ -15,6 +14,9 @@ import Format from "../models/Format.js";
 import Theme from "../models/Theme.js";
 import fs from "fs";
 import util from "util";
+
+const endpointSecret =
+  "whsec_d0333c518a76e3f791cd4d327b6c1f6407c7835938ae24660e38c3920c1681ff";
 
 const stripe = Stripe(
   "sk_test_51Mbl5wGCxeoiwh2aTPy6BSwW9QSyQ0cIcI6yXJp7VVxZfRSZotUrxcRT2wqgY0I11ONDTaAJGIjtgno2pMXyp9mR00PkoU2gNj"
@@ -411,6 +413,25 @@ const updateEvent = async (req) => {
     return event;
   } else return { message: "No access!" };
 };
+const webhook = async (req, res) => {
+  let event = req.body;
+
+  // Handle the event
+  switch (event.type) {
+    case "checkout.session.completed":
+      const paymentIntentSucceeded = event.data.object.id;
+      console.log("paymentIntentSucceeded", paymentIntentSucceeded);
+
+      // Получаем объект Checkout Session
+      const session = await stripe.checkout.sessions.retrieve(
+        paymentIntentSucceeded
+      );
+
+      res.send(session.payment_intent);
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+};
 const payment = async (req, res) => {
   const line_items_promises = req.body.cartItems.map(async (item) => {
     const promo = await Promocode.findOne({
@@ -453,8 +474,6 @@ const payment = async (req, res) => {
 
   const items_for_tickets = await Promise.all(items);
 
-  console.log(items_for_tickets);
-
   const session = await stripe.checkout.sessions.create({
     line_items,
     mode: "payment",
@@ -465,19 +484,6 @@ const payment = async (req, res) => {
   });
 
   res.send({ url: session.url });
-
-  // Получаем информацию о сессии
-  const sessionData = await stripe.checkout.sessions.retrieve(session.id);
-  console.log(sessionData, sessionData.payment_intent);
-
-  const paymentIntentId = "";
-  if (
-    sessionData.payment_intent &&
-    sessionData.payment_intent.status === "succeeded"
-  ) {
-    paymentIntentId = sessionData.payment_intent.id;
-  }
-  console.log(paymentIntentId);
 };
 const after_buying_action = async (req) => {
   const user = await User.findById(req.user.id);
@@ -640,6 +646,7 @@ export default {
   payment,
   after_buying_action,
   createComment,
+  webhook,
   getEventComments,
   getEventCategory,
   loadPictures,

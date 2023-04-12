@@ -30,4 +30,8 @@ router.patch("/:id", verifyJWT, userController.updateUser);
 // http://localhost:3002/api/users/subscriptionTo/:id
 router.get("/subscriptionTo/:id", verifyJWT, userController.subscriptionTo);
 
+// Update user's subs by id +
+// http://localhost:3002/api/users/:id/subs
+router.patch("/:id/subs", verifyJWT, userController.updateMySubs);
+
 export default router;

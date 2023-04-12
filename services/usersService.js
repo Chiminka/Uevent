@@ -79,6 +79,29 @@ const loadProfilePhoto = async (req) => {
   user.save();
   return user;
 };
+const updateMySubs = async (req) => {
+  const { subscriptions_companies, subscriptions_events } = req.body;
+
+  const user = await User.findById(req.params.id)
+    .populate("subscriptions_companies")
+    .populate("subscriptions_events");
+
+  if (
+    subscriptions_companies &&
+    JSON.stringify(subscriptions_companies) !==
+      JSON.stringify(user.subscriptions_companies)
+  )
+    user.subscriptions_companies = subscriptions_companies;
+
+  if (
+    subscriptions_events &&
+    JSON.stringify(subscriptions_events) !==
+      JSON.stringify(user.subscriptions_events)
+  )
+    user.subscriptions_events = subscriptions_events;
+  await user.save();
+  return user;
+};
 const updateUser = async (req, res) => {
   const {
     full_name,
@@ -88,8 +111,6 @@ const updateUser = async (req, res) => {
     email,
     companies,
     my_social_net,
-    subscriptions_companies,
-    subscriptions_events,
   } = req.body;
   const user = await User.findById(req.params.id);
 
@@ -97,24 +118,6 @@ const updateUser = async (req, res) => {
   if (!isPasswordCorrect) {
     return { success: false, message: "Uncorrect password" };
   }
-
-  let fileName = "";
-  if (req.files) {
-    fileName = Date.now().toString() + req.files.files.name;
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    const uploadDir = path.join(__dirname, "..", "uploads");
-    try {
-      await mkdir(uploadDir);
-    } catch (err) {
-      if (err.code !== "EEXIST") throw err;
-    }
-    req.files.files.mv(path.join(uploadDir, fileName));
-  }
-
-  if (fileName.length < 1) {
-    fileName = user.avatar;
-  }
-  user.avatar = fileName;
 
   if (req.user._id.equals(user._id)) {
     if (full_name && full_name !== user.full_name) user.full_name = full_name;
@@ -134,20 +137,6 @@ const updateUser = async (req, res) => {
     ) {
       user.companies = companies;
     }
-
-    if (
-      subscriptions_companies &&
-      JSON.stringify(subscriptions_companies) !==
-        JSON.stringify(user.subscriptions_companies)
-    )
-      user.subscriptions_companies = subscriptions_companies;
-
-    if (
-      subscriptions_events &&
-      JSON.stringify(subscriptions_events) !==
-        JSON.stringify(user.subscriptions_events)
-    )
-      user.subscriptions_events = subscriptions_events;
 
     if (
       my_social_net &&
@@ -231,7 +220,9 @@ const updateUser = async (req, res) => {
   } else return { message: "No access!" };
 };
 const subscriptionTo = async (req) => {
-  const user = await User.findById(req.user.id);
+  const user = await User.findById(req.user.id)
+    .populate("subscriptions_events")
+    .populate("subscriptions_companies");
   if (
     (await Event.findById(req.params.id)) &&
     !user.subscriptions_events.includes(req.params.id)
@@ -252,6 +243,7 @@ export default {
   getMyTickets,
   deleteUser,
   updateUser,
+  updateMySubs,
   subscriptionTo,
   getMyCompanies,
   loadProfilePhoto,

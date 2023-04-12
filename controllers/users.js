@@ -55,4 +55,13 @@ export class UserController {
       res.json({ message: "Updating user error" });
     }
   }
+  async updateMySubs(req, res) {
+    try {
+      const updateMySubs = await userService.updateMySubs(req);
+      res.json(updateMySubs);
+    } catch (error) {
+      console.log(error);
+      res.json({ message: "Updating user error" });
+    }
+  }
 }
