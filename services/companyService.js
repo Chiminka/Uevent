@@ -234,8 +234,13 @@ const updatePromo = async (req) => {
     });
     await newPromo.save();
 
-    return { message: "Promo was creates" };
-  } else return { message: "Your promo is still alive" };
+    res.json({
+      message: "Promo was creates",
+    });
+  } else
+    res.json({
+      message: "Your promo is still alive",
+    });
 };
 const giveSubPromo = async (req) => {
   const company = await Company.findById(req.params.id);
@@ -274,8 +279,9 @@ const giveSubPromo = async (req) => {
       });
     }
   }
-
-  return { message: "Promo was sent" };
+  res.json({
+    message: "Promo was sent",
+  });
 };
 const inviteMembers = async (req, res) => {
   const { email } = req.body;
@@ -306,7 +312,9 @@ const addNewMember = async (req) => {
   const user = await User.findById(req.user.id);
   user.companies.push(req.params.id);
   await user.save();
-  return { message: "You are member now!" };
+  res.json({
+    message: "You are member now!",
+  });
 };
 
 export default {

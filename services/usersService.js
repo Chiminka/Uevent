@@ -77,7 +77,9 @@ const loadProfilePhoto = async (req) => {
   }
   user.avatar = fileName;
   await user.save();
-  return user;
+  res.json({
+    message: "Photo was updated",
+  });
 };
 const updateMySubs = async (req) => {
   const { subscriptions_companies, subscriptions_events } = req.body;
@@ -214,8 +216,13 @@ const updateUser = async (req, res) => {
     }
 
     await user.save();
-    return { message: "User was updated" };
-  } else return { message: "No access!" };
+    res.json({
+      message: "User was updated",
+    });
+  } else
+    res.json({
+      message: "No access!",
+    });
 };
 const subscriptionTo = async (req) => {
   const user = await User.findById(req.user.id)
