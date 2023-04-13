@@ -76,7 +76,7 @@ const loadProfilePhoto = async (req) => {
     fileName = user.avatar;
   }
   user.avatar = fileName;
-  user.save();
+  await user.save();
   return user;
 };
 const updateMySubs = async (req) => {

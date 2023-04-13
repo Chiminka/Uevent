@@ -185,7 +185,7 @@ const createMyCompany = async (req) => {
 
   const user = await User.findById(req.user.id);
   user.companies.push(newCompany.id);
-  user.save();
+  await user.save();
 
   // создаем новый объект Date с текущей датой и временем
   var currentDate = new Date();
@@ -254,7 +254,7 @@ const giveSubPromo = async (req) => {
   console.log("randomUsers", randomUsers);
 
   const promocode = await Promocode.findOne({ company: req.params.id });
-  
+
   if (!promocode) return { message: "Firstly create a new promo" };
 
   // Для каждого пользователя добавляем промокод, если его нет в массиве промокодов пользователя
