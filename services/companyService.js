@@ -254,6 +254,8 @@ const giveSubPromo = async (req) => {
   console.log("randomUsers", randomUsers);
 
   const promocode = await Promocode.findOne({ company: req.params.id });
+  
+  if (!promocode) return { message: "Firstly create a new promo" };
 
   // Для каждого пользователя добавляем промокод, если его нет в массиве промокодов пользователя
   for (const user of randomUsers) {
