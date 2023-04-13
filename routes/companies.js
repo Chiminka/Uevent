@@ -30,8 +30,20 @@ router.patch("/:id", verifyJWT, companiesController.updateCompany);
 // http://localhost:3002/api/companies/:id/update-promo
 router.get("/:id/update-promo", verifyJWT, companiesController.updatePromo);
 
-// Let 5 or less random people, who is subscribed, a companies promo -
+// Let 5 or less random people, who is subscribed, a companies promo +
 // http://localhost:3002/api/companies/:id/give-promo
 router.get("/:id/give-promo", verifyJWT, companiesController.giveSubPromo);
+
+// Invite friend to company +
+// http://localhost:3002/api/companies/:id/invite-members
+router.post(
+  "/:id/invite-members",
+  verifyJWT,
+  companiesController.inviteMembers
+);
+
+// Invite friend to company +
+// http://localhost:3002/api/companies/:id/add-new-member
+router.get("/:id/add-new-member", verifyJWT, companiesController.addNewMember);
 
 export default router;

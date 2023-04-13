@@ -60,4 +60,22 @@ export class CompanyController {
       res.json({ message: "Give promo error" });
     }
   }
+  async inviteMembers(req, res) {
+    try {
+      const inviteMembers = await companyService.inviteMembers(req, res);
+      res.json(inviteMembers);
+    } catch (error) {
+      console.log(error);
+      res.json({ message: "Inviting error" });
+    }
+  }
+  async addNewMember(req, res) {
+    try {
+      const addNewMember = await companyService.addNewMember(req);
+      res.json(addNewMember);
+    } catch (error) {
+      console.log(error);
+      res.json({ message: "Adding members error" });
+    }
+  }
 }

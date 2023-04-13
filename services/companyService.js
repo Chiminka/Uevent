@@ -10,9 +10,8 @@ import Promocode from "../models/Promocode.js";
 // если компания удалила себя - оповестить
 const deleteCompany = async (req, res) => {
   const company = await Company.findById(req.params.id);
-  const user = await User.findById(req.user.id);
 
-  if (user.companies.includes(company.id)) {
+  if (company.admin === req.user.id) {
     const users = await User.find();
     let arr_subs = [];
     for (let i = 0; i < users.length; i++) {
@@ -66,9 +65,8 @@ const deleteCompany = async (req, res) => {
 const updateCompany = async (req) => {
   const { company_name, email, location } = req.body;
   const company = await Company.findById(req.params.id);
-  const user = await User.findById(req.user.id);
 
-  if (user.companies.includes(company.id)) {
+  if (company.admin === req.user.id) {
     if (company_name || location) {
       const users = await User.find();
       let arr_subs = [];
@@ -172,6 +170,7 @@ const createMyCompany = async (req) => {
     company_name,
     email,
     location,
+    admin: req.user.id,
   });
 
   await newCompany.save();
@@ -278,6 +277,37 @@ const giveSubPromo = async (req) => {
 
   return { message: "Promo was sent" };
 };
+const inviteMembers = async (req, res) => {
+  const { email } = req.body;
+
+  const new_member = await User.findOne({ email: email });
+  if (!new_member)
+    return res.json({
+      success: false,
+      message: "Sorry, user not founded!",
+    });
+
+  const company = await Company.findById(req.params.id);
+
+  // verification email
+  const url = `${process.env.BASE_URL}companies/${req.params.id}/add-new-member`;
+  mailTransport().sendMail({
+    from: process.env.USER,
+    to: email,
+    subject: `Tou have been invited to the company ${company.company_name} by ${req.user.username}. To grant access, follow the link or ignore this message.`,
+    html: `<h1>${url}</h1>`,
+  });
+  ////////////////////////////////////////
+  res.json({
+    message: "An Email was sent",
+  });
+};
+const addNewMember = async (req) => {
+  const user = await User.findById(req.user.id);
+  user.companies.push(req.params.id);
+  await user.save();
+  return { message: "You are member now!" };
+};
 
 export default {
   getCompanyById,
@@ -287,4 +317,6 @@ export default {
   getCompanyEvents,
   updatePromo,
   giveSubPromo,
+  inviteMembers,
+  addNewMember,
 };
