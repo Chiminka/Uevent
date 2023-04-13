@@ -44,4 +44,20 @@ export class CompanyController {
       res.json({ message: "Getting events error" });
     }
   }
+  async updatePromo(req, res) {
+    try {
+      const updatePromo = await companyService.updatePromo(req);
+      res.json(updatePromo);
+    } catch (error) {
+      res.json({ message: "Update promo error" });
+    }
+  }
+  async giveSubPromo(req, res) {
+    try {
+      const giveSubPromo = await companyService.giveSubPromo(req);
+      res.json(giveSubPromo);
+    } catch (error) {
+      res.json({ message: "Give promo error" });
+    }
+  }
 }

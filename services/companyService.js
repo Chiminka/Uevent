@@ -219,6 +219,63 @@ const getCompanyById = async (req) => {
   const company = await Company.findById(req.params.id);
   return company;
 };
+const updatePromo = async (req) => {
+  const promo_code = await Promocode.findOne({ company: req.params.id });
+  if (!promo_code) {
+    // создаем новый объект Date с текущей датой и временем
+    var currentDate = new Date();
+
+    // добавляем 3 недели к текущей дате
+    var futureDate = new Date(currentDate.getTime() + 21 * 24 * 60 * 60 * 1000);
+
+    const newPromo = new Promocode({
+      company: req.params.id,
+      promo_code: promo(),
+      expiration_date: futureDate,
+    });
+    await newPromo.save();
+
+    return { message: "Promo was creates" };
+  } else return { message: "Your promo is still alive" };
+};
+const giveSubPromo = async (req) => {
+  const company = await Company.findById(req.params.id);
+
+  // фильтруем пользователей, чтобы оставить только тех, у кого есть подписки на компанию
+  const usersWithSubscription = await User.find({
+    subscriptions_companies: req.params.id,
+  });
+
+  const randomUsers = usersWithSubscription
+    .slice()
+    .sort(() => 0.5 - Math.random())
+    .slice(0, 5);
+  // получаем 2 случайных элемента из массива usersWithSubscription
+  console.log("randomUsers", randomUsers);
+
+  const promocode = await Promocode.findOne({ company: req.params.id });
+
+  // Для каждого пользователя добавляем промокод, если его нет в массиве промокодов пользователя
+  for (const user of randomUsers) {
+    if (!promocode.users.includes(user.id)) {
+      promocode.users.push(user.id);
+      await promocode.save();
+
+      // Отправляем письмо с промокодом пользователю
+      mailTransport().sendMail({
+        from: process.env.USER,
+        to: user.email,
+        subject: `You got a promo-code! From site "Let's go together"`,
+        html: `<h1>${user.username}, you got a promo-code for events by company ${company.company_name}</h1>
+        <h2>Put it in and get 4% discount!</h2>
+        <h2>${promocode.promo_code}</h2>
+        <h3>Promo code is valid until ${promocode.expiration_date}</h3>`,
+      });
+    }
+  }
+
+  return { message: "Promo was sent" };
+};
 
 export default {
   getCompanyById,
@@ -226,4 +283,6 @@ export default {
   deleteCompany,
   updateCompany,
   getCompanyEvents,
+  updatePromo,
+  giveSubPromo,
 };

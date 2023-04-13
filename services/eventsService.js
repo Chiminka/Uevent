@@ -518,7 +518,7 @@ const after_buying_action = async (req) => {
     mailTransport().sendMail({
       from: company.email,
       to: user.email,
-      subject: `Your tickets from "Afisha"`,
+      subject: `Your tickets from "Let's go together"`,
       html: `<h1>${user.full_name} bought ${
         bought_tickets[i].quantity
       } tickets from "Afisha" on ${event.title}</h1>
@@ -531,7 +531,7 @@ const after_buying_action = async (req) => {
       mailTransport().sendMail({
         from: process.env.USER,
         to: company.email,
-        subject: `The new member on your event from "Afisha"`,
+        subject: `The new member on your event from "Let's go together"`,
         html: `<h1>${user.full_name} bought ${
           bought_tickets[i].quantity
         } tickets from "Afisha" on ${event.title}</h1>
@@ -557,34 +557,6 @@ const after_buying_action = async (req) => {
       await newTicket.save();
     }
   }
-  // Определяем массив
-  let promo = await Promocode.find();
-  let arr = promo.map((p) => p.id);
-
-  // Получаем случайный ключ массива
-  var rand =
-    Math.random() <= 0.8 ? Math.floor(Math.random() * arr.length) : null;
-
-  if (rand !== null) {
-    promo = await Promocode.findById(arr[rand]);
-    if (!promo.users.includes(req.user.id)) {
-      promo.users.push(req.user.id);
-      await promo.save();
-      const nameCompany = await Company.findById(promo.company);
-
-      if (promo.promo_code.length > 0) {
-        mailTransport().sendMail({
-          from: process.env.USER,
-          to: user.email,
-          subject: `You got a promo-code! From site Afisha`,
-          html: `<h1>${user.full_name}, you got a promo-code for events by company ${nameCompany.company_name}</h1>
-        <h2>Put it in and get 4% discount!</h2>
-        <h2>${promo.promo_code}</h2>`,
-        });
-      }
-    }
-  }
-
   return { message: "Tickets were sent on your email" };
 };
 const createComment = async (req) => {

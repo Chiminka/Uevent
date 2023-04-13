@@ -26,4 +26,12 @@ router.delete("/:id", verifyJWT, companiesController.deleteCompany);
 // http://localhost:3002/api/companies/:id
 router.patch("/:id", verifyJWT, companiesController.updateCompany);
 
+// Create a new promo +
+// http://localhost:3002/api/companies/:id/update-promo
+router.get("/:id/update-promo", verifyJWT, companiesController.updatePromo);
+
+// Let 5 or less random people, who is subscribed, a companies promo -
+// http://localhost:3002/api/companies/:id/give-promo
+router.get("/:id/give-promo", verifyJWT, companiesController.giveSubPromo);
+
 export default router;
