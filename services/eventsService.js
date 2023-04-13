@@ -92,7 +92,7 @@ const getAllEvents = async (req) => {
 
   return { pageEvents, totalPages };
 };
-const loadPictures = async (req) => {
+const loadPictures = async (req, res) => {
   const event = await Event.findById(req.params.id);
   let fileName = "";
   if (req.files) {
@@ -114,7 +114,7 @@ const loadPictures = async (req) => {
   return event;
 };
 // если компания создала ивент - оповестить
-const createEvent = async (req) => {
+const createEvent = async (req, res) => {
   const company = await Company.findById(req.params.id);
   const user = await User.findById(req.user.id);
 
@@ -223,7 +223,7 @@ const createEvent = async (req) => {
   return newEvent;
 };
 // если компания удалила ивент - оповестить
-const deleteEvent = async (req) => {
+const deleteEvent = async (req, res) => {
   // может только компания, которая создала
   const event = await Event.findById(req.params.eventId);
   if (event === null) {
@@ -299,7 +299,7 @@ const deleteEvent = async (req) => {
   } else return { message: "No access!" };
 };
 // если компания изменила ивент - оповестить
-const updateEvent = async (req) => {
+const updateEvent = async (req, res) => {
   // может только компания, которая создала
   let {
     notifications,
@@ -485,7 +485,7 @@ const payment = async (req, res) => {
 
   res.send({ url: session.url });
 };
-const after_buying_action = async (req) => {
+const after_buying_action = async (req, res) => {
   const user = await User.findById(req.user.id);
   const { bought_tickets } = req.body;
 
@@ -559,7 +559,7 @@ const after_buying_action = async (req) => {
   }
   return { message: "Tickets were sent on your email" };
 };
-const createComment = async (req) => {
+const createComment = async (req, res) => {
   const { comment } = req.body;
   if (!comment) return res.json({ message: "Comment can not be empty" });
   const newComment = new Comment({
@@ -570,13 +570,13 @@ const createComment = async (req) => {
   await newComment.save();
   return newComment;
 };
-const getEventComments = async (req) => {
+const getEventComments = async (req, res) => {
   const eventId = req.params.id;
   const comments = await Comment.find({ event: eventId });
   console.log(comments);
   return comments;
 };
-const getEventCategory = async (req) => {
+const getEventCategory = async (req, res) => {
   const event = await Event.findById(req.params.id);
   const format = await Format.find();
   const theme = await Theme.find();

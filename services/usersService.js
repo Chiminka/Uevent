@@ -12,7 +12,7 @@ import Event from "../models/Event.js";
 
 const mkdir = util.promisify(fs.mkdir);
 
-const getMyTickets = async (req) => {
+const getMyTickets = async (req, res) => {
   // получить все приобретенные билеты
   const tickets = await Ticket.find().populate({
     path: "event",
@@ -26,7 +26,7 @@ const getMyTickets = async (req) => {
   }
   return mas;
 };
-const getMyCompanies = async (req) => {
+const getMyCompanies = async (req, res) => {
   // получить все компании
   const user = await User.findById(req.user.id);
   let mas = [];
@@ -57,7 +57,7 @@ const deleteUser = async (req, res) => {
     return { message: "Cookie were cleared, user was deleted" };
   } else return { message: "No access!" };
 };
-const loadProfilePhoto = async (req) => {
+const loadProfilePhoto = async (req, res) => {
   const user = await User.findById(req.params.id);
   let fileName = "";
   if (req.files) {
@@ -81,7 +81,7 @@ const loadProfilePhoto = async (req) => {
     message: "Photo was updated",
   });
 };
-const updateMySubs = async (req) => {
+const updateMySubs = async (req, res) => {
   const { subscriptions_companies, subscriptions_events } = req.body;
 
   const user = await User.findById(req.user.id);
@@ -224,7 +224,7 @@ const updateUser = async (req, res) => {
       message: "No access!",
     });
 };
-const subscriptionTo = async (req) => {
+const subscriptionTo = async (req, res) => {
   const user = await User.findById(req.user.id)
     .populate("subscriptions_events")
     .populate("subscriptions_companies");

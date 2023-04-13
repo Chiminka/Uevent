@@ -7,7 +7,8 @@ export class EventController {
       if (req.user) userID = req.user._id;
       const getEventById = await eventService.getEventById(
         req.params.id,
-        userID
+        userID,
+        res
       );
       res.json(getEventById);
     } catch (error) {
@@ -17,7 +18,7 @@ export class EventController {
   }
   async getAllEvents(req, res) {
     try {
-      const getAllEvents = await eventService.getAllEvents(req);
+      const getAllEvents = await eventService.getAllEvents(req, res);
       res.json(getAllEvents);
     } catch (error) {
       console.log(error);
@@ -27,7 +28,7 @@ export class EventController {
   async createEvent(req, res) {
     // может только компания
     try {
-      const createEvent = await eventService.createEvent(req);
+      const createEvent = await eventService.createEvent(req, res);
       res.json(createEvent);
     } catch (error) {
       console.log(error);
@@ -36,7 +37,7 @@ export class EventController {
   }
   async deleteEvent(req, res) {
     try {
-      const deleteEvent = await eventService.deleteEvent(req);
+      const deleteEvent = await eventService.deleteEvent(req, res);
       res.json(deleteEvent);
     } catch (error) {
       console.log(error);
@@ -45,7 +46,7 @@ export class EventController {
   }
   async updateEvent(req, res) {
     try {
-      const updateEvent = await eventService.updateEvent(req);
+      const updateEvent = await eventService.updateEvent(req, res);
       res.json(updateEvent);
     } catch (error) {
       console.log(error);
@@ -54,7 +55,7 @@ export class EventController {
   }
   async loadPictures(req, res) {
     try {
-      const loadPictures = await eventService.loadPictures(req);
+      const loadPictures = await eventService.loadPictures(req, res);
       res.json(loadPictures);
     } catch (error) {
       console.log(error);
@@ -81,7 +82,10 @@ export class EventController {
   }
   async after_buying_action(req, res) {
     try {
-      const after_buying_action = await eventService.after_buying_action(req);
+      const after_buying_action = await eventService.after_buying_action(
+        req,
+        res
+      );
       res.json(after_buying_action);
     } catch (error) {
       console.log(error);
@@ -90,7 +94,7 @@ export class EventController {
   }
   async createComment(req, res) {
     try {
-      const createComment = await eventService.createComment(req);
+      const createComment = await eventService.createComment(req, res);
       res.json(createComment);
     } catch (error) {
       console.log(error);
@@ -99,7 +103,7 @@ export class EventController {
   }
   async getEventComments(req, res) {
     try {
-      const getEventComments = await eventService.getEventComments(req);
+      const getEventComments = await eventService.getEventComments(req, res);
       res.json(getEventComments);
     } catch (error) {
       res.json({ message: "Something gone wrong" });
@@ -107,7 +111,7 @@ export class EventController {
   }
   async getEventCategory(req, res) {
     try {
-      const getEventCategory = await eventService.getEventCategory(req);
+      const getEventCategory = await eventService.getEventCategory(req, res);
       res.json(getEventCategory);
     } catch (error) {
       console.log(error);

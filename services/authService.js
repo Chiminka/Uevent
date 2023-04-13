@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import mailTransport from "../utils/mailTransport.js";
 import asyncHandler from "express-async-handler";
 
-const register = async (userData) => {
+const register = async (userData, res) => {
   const { username, full_name, password, email, repeatPassword } = userData;
 
   if (!username || !password || !email || !repeatPassword)
@@ -152,7 +152,7 @@ const logout = async (cookies, res) => {
   });
   return { message: "Cookie cleared" };
 };
-const verifyEmail = async (token, req) => {
+const verifyEmail = async (token, req, res) => {
   jwt.verify(
     token,
     process.env.JWT_SECRET,
@@ -174,7 +174,7 @@ const verifyEmail = async (token, req) => {
   await user.save();
   return { success: true, message: "Your email is verified" };
 };
-const getMe = async (user_id) => {
+const getMe = async (user_id, res) => {
   const user = await User.findById(user_id)
     .populate({
       path: "subscriptions_events",
@@ -193,7 +193,7 @@ const getMe = async (user_id) => {
     user,
   };
 };
-const forgotPassword = async (body) => {
+const forgotPassword = async (body, res) => {
   const { email } = body;
 
   if (!email) return { message: "Content can not be empty" };
@@ -220,7 +220,7 @@ const forgotPassword = async (body) => {
   });
   return { message: "Re-send the password, please check your email" };
 };
-const reset = async (body, token, req) => {
+const reset = async (body, token, req, res) => {
   const { new_password, confirm_password } = body;
 
   if (!new_password || !confirm_password || !token) {

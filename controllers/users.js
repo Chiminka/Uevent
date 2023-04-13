@@ -3,7 +3,7 @@ import userService from "../services/usersService.js";
 export class UserController {
   async getMyTickets(req, res) {
     try {
-      const getMyTickets = await userService.getMyTickets(req);
+      const getMyTickets = await userService.getMyTickets(req, res);
       res.json(getMyTickets);
     } catch (error) {
       console.log(error);
@@ -12,7 +12,7 @@ export class UserController {
   }
   async loadProfilePhoto(req, res) {
     try {
-      const loadProfilePhoto = await userService.loadProfilePhoto(req);
+      const loadProfilePhoto = await userService.loadProfilePhoto(req, res);
       res.json(loadProfilePhoto);
     } catch (error) {
       console.log(error);
@@ -21,7 +21,7 @@ export class UserController {
   }
   async getMyCompanies(req, res) {
     try {
-      const getMyCompanies = await userService.getMyCompanies(req);
+      const getMyCompanies = await userService.getMyCompanies(req, res);
       res.json(getMyCompanies);
     } catch (error) {
       console.log(error);
@@ -48,7 +48,7 @@ export class UserController {
   }
   async subscriptionTo(req, res) {
     try {
-      const subscriptionTo = await userService.subscriptionTo(req);
+      const subscriptionTo = await userService.subscriptionTo(req, res);
       res.json(subscriptionTo);
     } catch (error) {
       console.log(error);
@@ -57,7 +57,7 @@ export class UserController {
   }
   async updateMySubs(req, res) {
     try {
-      const updateMySubs = await userService.updateMySubs(req);
+      const updateMySubs = await userService.updateMySubs(req, res);
       res.json(updateMySubs);
     } catch (error) {
       console.log(error);

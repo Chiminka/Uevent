@@ -8,7 +8,7 @@ import promo from "../utils/create_promo.js";
 import Promocode from "../models/Promocode.js";
 
 // если компания удалила себя - оповестить
-const deleteCompany = async (req, res) => {
+const deleteCompany = async (req) => {
   const company = await Company.findById(req.params.id);
 
   if (company.admin === req.user.id) {
@@ -218,7 +218,7 @@ const getCompanyById = async (req) => {
   const company = await Company.findById(req.params.id);
   return company;
 };
-const updatePromo = async (req) => {
+const updatePromo = async (req, res) => {
   const promo_code = await Promocode.findOne({ company: req.params.id });
   if (!promo_code) {
     // создаем новый объект Date с текущей датой и временем
@@ -242,7 +242,7 @@ const updatePromo = async (req) => {
       message: "Your promo is still alive",
     });
 };
-const giveSubPromo = async (req) => {
+const giveSubPromo = async (req, res) => {
   const company = await Company.findById(req.params.id);
 
   // фильтруем пользователей, чтобы оставить только тех, у кого есть подписки на компанию
@@ -308,7 +308,7 @@ const inviteMembers = async (req, res) => {
     message: "An Email was sent",
   });
 };
-const addNewMember = async (req) => {
+const addNewMember = async (req, res) => {
   const user = await User.findById(req.user.id);
   user.companies.push(req.params.id);
   await user.save();

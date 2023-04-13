@@ -12,7 +12,7 @@ export class CompanyController {
   }
   async updateCompany(req, res) {
     try {
-      const updateCompany = await companyService.updateCompany(req);
+      const updateCompany = await companyService.updateCompany(req, res);
       res.json(updateCompany);
     } catch (error) {
       console.log(error);
@@ -21,7 +21,7 @@ export class CompanyController {
   }
   async getCompanyEvents(req, res) {
     try {
-      const getCompanyEvents = await companyService.getCompanyEvents(req);
+      const getCompanyEvents = await companyService.getCompanyEvents(req, res);
       res.json(getCompanyEvents);
     } catch (error) {
       res.json({ message: "Getting events error" });
@@ -29,7 +29,7 @@ export class CompanyController {
   }
   async createMyCompany(req, res) {
     try {
-      const createMyCompany = await companyService.createMyCompany(req);
+      const createMyCompany = await companyService.createMyCompany(req, res);
       res.json(createMyCompany);
     } catch (error) {
       console.log(error);
@@ -38,7 +38,7 @@ export class CompanyController {
   }
   async getCompanyById(req, res) {
     try {
-      const getCompanyById = await companyService.getCompanyById(req);
+      const getCompanyById = await companyService.getCompanyById(req, res);
       res.json(getCompanyById);
     } catch (error) {
       res.json({ message: "Getting events error" });
@@ -46,7 +46,7 @@ export class CompanyController {
   }
   async updatePromo(req, res) {
     try {
-      const updatePromo = await companyService.updatePromo(req);
+      const updatePromo = await companyService.updatePromo(req, res);
       res.json(updatePromo);
     } catch (error) {
       res.json({ message: "Update promo error" });
@@ -54,7 +54,7 @@ export class CompanyController {
   }
   async giveSubPromo(req, res) {
     try {
-      const giveSubPromo = await companyService.giveSubPromo(req);
+      const giveSubPromo = await companyService.giveSubPromo(req, res);
       res.json(giveSubPromo);
     } catch (error) {
       res.json({ message: "Give promo error" });
@@ -71,7 +71,7 @@ export class CompanyController {
   }
   async addNewMember(req, res) {
     try {
-      const addNewMember = await companyService.addNewMember(req);
+      const addNewMember = await companyService.addNewMember(req, res);
       res.json(addNewMember);
     } catch (error) {
       console.log(error);

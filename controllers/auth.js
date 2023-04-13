@@ -3,7 +3,7 @@ import authService from "../services/authService.js";
 export class AuthController {
   async register(req, res) {
     try {
-      const newUser = await authService.register(req.body);
+      const newUser = await authService.register(req.body, res);
       res.json(newUser);
     } catch (error) {
       console.log(error);
@@ -25,7 +25,11 @@ export class AuthController {
   }
   async verifyEmail(req, res) {
     try {
-      const verifyEmail = await authService.verifyEmail(req.params.token, req);
+      const verifyEmail = await authService.verifyEmail(
+        req.params.token,
+        req,
+        res
+      );
       res.json(verifyEmail);
     } catch (error) {
       console.log(error);
@@ -34,7 +38,7 @@ export class AuthController {
   }
   async getMe(req, res) {
     try {
-      const getMe = await authService.getMe(req.user.id);
+      const getMe = await authService.getMe(req.user.id, res);
       res.json(getMe);
     } catch (error) {
       res.json({ message: "Not access" });
@@ -42,7 +46,7 @@ export class AuthController {
   }
   async forgotPassword(req, res) {
     try {
-      const forgotPassword = await authService.forgotPassword(req.body);
+      const forgotPassword = await authService.forgotPassword(req.body, res);
       res.json(forgotPassword);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -50,7 +54,12 @@ export class AuthController {
   }
   async reset(req, res) {
     try {
-      const reset = await authService.reset(req.body, req.params.token, req);
+      const reset = await authService.reset(
+        req.body,
+        req.params.token,
+        req,
+        res
+      );
       res.json(reset);
     } catch (error) {
       res.status(500).json({ message: error.message });
