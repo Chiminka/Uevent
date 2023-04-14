@@ -383,18 +383,21 @@ const updateEvent = async (req, res) => {
       }
 
     if (date_event) {
+      date_event = date_event.replace(/ /g, "T");
       const date_e = new Date(`${date_event}T00:00:00`);
       date_event = !date_event.includes("T")
         ? (date_event = date_e)
         : (date_event = date_event);
     }
     if (date_end) {
+      date_end = date_end.replace(/ /g, "T");
       const fdate_e = new Date(`${date_end}T00:00:00`);
       date_end = !date_end.includes("T")
         ? (date_end = fdate_e)
         : (date_end = date_end);
     }
     if (date_post) {
+      date_post = date_post.replace(/ /g, "T");
       const date_p = new Date(`${date_post}T00:00:00`);
       date_post = !date_post.includes("T")
         ? (date_post = date_p)
