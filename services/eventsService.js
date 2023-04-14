@@ -96,7 +96,7 @@ const loadPictures = async (req, res) => {
   const event = await Event.findById(req.params.id);
   let fileName = "";
   if (req.files) {
-    fileName = Date.now().toString() + req.files.files.name;
+    fileName = req.files.files.name;
     const __dirname = dirname(fileURLToPath(import.meta.url));
     const uploadDir = path.join(__dirname, "..", "uploads");
     try {
@@ -158,18 +158,22 @@ const createEvent = async (req, res) => {
     return { message: "Content can not be empty" };
 
   if (date_event) {
+    date_event = date_event.replace(/ /g, "T");
+    console.log(date_event);
     const date_e = new Date(`${date_event}T00:00:00`);
     date_event = !date_event.includes("T")
       ? (date_event = date_e)
       : (date_event = date_event);
   }
   if (date_end) {
+    date_end = date_end.replace(/ /g, "T");
     const fdate_e = new Date(`${date_end}T00:00:00`);
     date_end = !date_end.includes("T")
       ? (date_end = fdate_e)
       : (date_end = date_end);
   }
   if (date_post) {
+    date_post = date_post.replace(/ /g, "T");
     const date_p = new Date(`${date_post}T00:00:00`);
     date_post = !date_post.includes("T")
       ? (date_post = date_p)

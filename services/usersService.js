@@ -61,7 +61,7 @@ const loadProfilePhoto = async (req, res) => {
   const user = await User.findById(req.params.id);
   let fileName = "";
   if (req.files) {
-    fileName = Date.now().toString() + req.files.files.name;
+    fileName = req.files.files.name;
     const __dirname = dirname(fileURLToPath(import.meta.url));
     const uploadDir = path.join(__dirname, "..", "uploads");
     try {
