@@ -559,7 +559,7 @@ const after_buying_action = async (req, res) => {
         } tickets from "Afisha" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location.description}</h2>
-        <h1>Was paid: ${bought_tickets[i].price / 100}</h1>`,
+        <h1>Was paid: ${bought_tickets[i].price}</h1>`,
       });
     }
 
