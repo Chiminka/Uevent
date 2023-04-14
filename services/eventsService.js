@@ -490,7 +490,8 @@ const payment = async (req, res) => {
     const { id, visible, remind, promo } =
       item.price_data.product_data.metadata;
     const price = item.price_data.unit_amount / 100;
-    return { id, visible, remind, promo, price };
+    const quantity = item.quantity;
+    return { id, visible, remind, promo, price, quantity };
   });
 
   const items_for_tickets = await Promise.all(items);
@@ -542,7 +543,7 @@ const after_buying_action = async (req, res) => {
       subject: `Your tickets from "Let's go together"`,
       html: `<h1>${user.full_name} bought ${
         bought_tickets[i].quantity
-      } tickets from "Afisha" on ${event.title}</h1>
+      } tickets from "Let's go together" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location.description}</h2>
         <h1>Was paid: ${bought_tickets[i].price / 100}</h1>`,
