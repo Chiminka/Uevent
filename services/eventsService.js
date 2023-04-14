@@ -15,23 +15,20 @@ import Theme from "../models/Theme.js";
 import fs from "fs";
 import util from "util";
 
-const endpointSecret =
-  "whsec_d0333c518a76e3f791cd4d327b6c1f6407c7835938ae24660e38c3920c1681ff";
-
 const stripe = Stripe(
   "sk_test_51Mbl5wGCxeoiwh2aTPy6BSwW9QSyQ0cIcI6yXJp7VVxZfRSZotUrxcRT2wqgY0I11ONDTaAJGIjtgno2pMXyp9mR00PkoU2gNj"
 );
 
 const mkdir = util.promisify(fs.mkdir);
 
-const getEventById = async (id, userID) => {
+const getEventById = async (req, res, userID) => {
   const [event, all_events, ticket] = await Promise.all([
-    Event.findById(id)
+    Event.findById(req.params.id)
       .populate("author")
       .populate("themes")
       .populate("formats"),
     Event.find().populate("author").populate("themes").populate("formats"),
-    Ticket.find({ event: id }).populate("user"),
+    Ticket.find({ event: req.params.id }).populate("user"),
   ]);
 
   const members = ticket
@@ -52,7 +49,7 @@ const getEventById = async (id, userID) => {
   // если массив themes элемента е имеет хотя бы какое-то (some) айди t, которое иммет
   // вхождение (has) в массив themesSet, то суем этот элемент в similar_events
   const similar_events = all_events.filter((e) => {
-    if (e.id === id) return false;
+    if (e.id === req.params.id) return false;
 
     const intersectThemes = e.themes.some((t) => themesSet.has(t.id));
     const intersectFormats = e.formats.some((f) => formatsSet.has(f.id));
@@ -63,7 +60,7 @@ const getEventById = async (id, userID) => {
 
   return { event, similar_events, members };
 };
-const getAllEvents = async (req) => {
+const getAllEvents = async (req, res) => {
   const { sort: categoryType } = req.params;
   const filterThemesArray = req.query.filterThemes || null;
   const filterFormatsArray = req.query.filterFormats || null;
@@ -119,15 +116,18 @@ const createEvent = async (req, res) => {
   const user = await User.findById(req.user.id);
 
   if (!company) {
-    return { message: "No such a company" };
+    res.json({ message: "No such a company" });
+    return;
   }
 
   if (!user.companies.includes(company.id)) {
-    return { message: "Access denied" };
+    res.json({ message: "Access denied" });
+    return;
   }
 
   if (!company.verified) {
-    return { message: "Company is not verified" };
+    res.json({ message: "Company is not verified" });
+    return;
   }
 
   let {
@@ -154,12 +154,13 @@ const createEvent = async (req, res) => {
     !themes ||
     !formats ||
     !price
-  )
-    return { message: "Content can not be empty" };
+  ) {
+    res.json({ message: "Content can not be empty" });
+    return;
+  }
 
   if (date_event) {
     date_event = date_event.replace(/ /g, "T");
-    console.log(date_event);
     const date_e = new Date(`${date_event}T00:00:00`);
     date_event = !date_event.includes("T")
       ? (date_event = date_e)
@@ -231,7 +232,8 @@ const deleteEvent = async (req, res) => {
   // может только компания, которая создала
   const event = await Event.findById(req.params.eventId);
   if (event === null) {
-    return "this event doesn't exist";
+    res.json({ message: "this event doesn't exist" });
+    return;
   }
   const eventID = event.id;
   const user = await User.findById(req.user.id);
@@ -295,12 +297,17 @@ const deleteEvent = async (req, res) => {
       ]);
       // удаляется промо на этот ивент и сам ивент
       await Promise.all([Event.findByIdAndDelete(req.params.eventId)]);
-      return { message: "Event was deleted and members were warned" };
+      res.json({ message: "Event was deleted and members were warned" });
+      return;
     } else {
       await Promise.all([Event.findByIdAndDelete(req.params.eventId)]);
-      return { message: "Event was deleted" };
+      res.json({ message: "Event was deleted" });
+      return;
     }
-  } else return { message: "No access!" };
+  } else {
+    res.json({ message: "No access!" });
+    return;
+  }
 };
 // если компания изменила ивент - оповестить
 const updateEvent = async (req, res) => {
@@ -320,12 +327,16 @@ const updateEvent = async (req, res) => {
     members_visibles,
   } = req.body;
 
-  if (!req.params.companyId) return "Provide an id of event company";
+  if (!req.params.companyId) {
+    res.json({ message: "Provide an id of event company" });
+    return;
+  }
 
   const company = await Company.findById(req.params.companyId);
   const event = await Event.findById(req.params.eventId);
   if (event === null) {
-    return "this event doesn't exist";
+    res.json({ message: "this event doesn't exist" });
+    return;
   }
 
   console.log(company);
@@ -418,7 +429,10 @@ const updateEvent = async (req, res) => {
 
     await event.save();
     return event;
-  } else return { message: "No access!" };
+  } else {
+    res.json({ message: "No access!" });
+    return;
+  }
 };
 const webhook = async (req, res) => {
   let event = req.body;
@@ -564,11 +578,15 @@ const after_buying_action = async (req, res) => {
       await newTicket.save();
     }
   }
-  return { message: "Tickets were sent on your email" };
+  res.json({ message: "Tickets were sent on your email" });
+  return;
 };
 const createComment = async (req, res) => {
   const { comment } = req.body;
-  if (!comment) return res.json({ message: "Comment can not be empty" });
+  if (!comment) {
+    res.json({ message: "Comment can not be empty" });
+    return;
+  }
   const newComment = new Comment({
     comment,
     author: req.user.id,
@@ -579,6 +597,7 @@ const createComment = async (req, res) => {
 };
 const getEventComments = async (req, res) => {
   const eventId = req.params.id;
+  console.log(eventId);
   const comments = await Comment.find({ event: eventId });
   console.log(comments);
   return comments;

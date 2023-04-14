@@ -10,6 +10,14 @@ const router = new Router();
 // http://localhost:3002/api/events/:id
 router.get("/:id", verifyUser, eventController.getEventById);
 
+// Get Event Comments +
+// http://localhost:3002/api/events/:id/comments
+router.get("/:id/comments", eventController.getEventComments);
+
+// Get Event Categories +
+// http://localhost:3002/api/events/:id/categories
+router.get("/:id/categories", eventController.getEventCategory);
+
 // Upload a picture +
 // http://localhost:3002/api/events/:id/pic-load
 router.post("/:id/pic-load", verifyUser, eventController.loadPictures);
@@ -54,16 +62,8 @@ router.post("/create-checkout-session", verifyJWT, eventController.payment);
 // http://localhost:3002/api/events/webhook
 router.post("/webhook", eventController.webhook);
 
-// Get Event Comments +
-// http://localhost:3002/api/events/:id/comments
-router.get("/:id/comments", eventController.getEventComments);
-
 // Create Event Comment +
 // http://localhost:3002/api/events/:id/comments
 router.post("/:id/comments", verifyJWT, eventController.createComment);
-
-// Get Event Categories +
-// http://localhost:3002/api/events/:id/categories
-router.get("/:id/categories", eventController.getEventCategory);
 
 export default router;

@@ -30,7 +30,7 @@ export class CategoryController {
   }
   async byId(req, res) {
     try {
-      const byId = await categoryService.byId(req.params.id);
+      const byId = await categoryService.byId(req, res);
       res.json(byId);
     } catch (error) {
       console.log(error);
@@ -39,9 +39,7 @@ export class CategoryController {
   }
   async categoryEvents(req, res) {
     try {
-      const categoryEvents = await categoryService.categoryEvents(
-        req.params.id
-      );
+      const categoryEvents = await categoryService.categoryEvents(req, res);
       res.json(categoryEvents);
     } catch (error) {
       console.log(error);

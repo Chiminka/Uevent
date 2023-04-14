@@ -7,11 +7,18 @@ import Ticket from "../models/Ticket.js";
 import promo from "../utils/create_promo.js";
 import Promocode from "../models/Promocode.js";
 
+import { fileURLToPath } from "url";
+import path, { dirname } from "path";
+import fs from "fs";
+import util from "util";
+
+const mkdir = util.promisify(fs.mkdir);
+
 // если компания удалила себя - оповестить
-const deleteCompany = async (req) => {
+const deleteCompany = async (req, res) => {
   const company = await Company.findById(req.params.id);
 
-  if (company.admin === req.user.id) {
+  if (company.admin.toString() === req.user.id.toString()) {
     const users = await User.find();
     let arr_subs = [];
     for (let i = 0; i < users.length; i++) {
@@ -58,15 +65,19 @@ const deleteCompany = async (req) => {
     for (let i = 0; i < events.length; i++) {
       await Event.findOneAndDelete({ author: events[i].author });
     }
-    return { message: "Company was deleted" };
-  } else return { message: "No access!" };
+    res.json({ message: "Company was deleted" });
+    return;
+  } else {
+    res.json({ message: "No access!" });
+    return;
+  }
 };
 // если компания изменила данные о себе - оповестить
-const updateCompany = async (req) => {
+const updateCompany = async (req, res) => {
   const { company_name, email, location } = req.body;
   const company = await Company.findById(req.params.id);
 
-  if (company.admin === req.user.id) {
+  if (company.admin.toString() === req.user.id.toString()) {
     if (company_name || location) {
       const users = await User.find();
       let arr_subs = [];
@@ -103,9 +114,10 @@ const updateCompany = async (req) => {
         /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
       if (!email.match(validRegex)) {
-        return {
+        res.json({
           message: "Email isn't valid",
-        };
+        });
+        return;
       }
       company.email = email;
       company.verified = false;
@@ -133,9 +145,12 @@ const updateCompany = async (req) => {
     }
     await company.save();
     return company;
-  } else return { message: "No access!" };
+  } else {
+    res.json({ message: "No access!" });
+    return;
+  }
 };
-const getCompanyEvents = async (req) => {
+const getCompanyEvents = async (req, res) => {
   const page = req.body;
   // получить все ивенты компании
   const company = await Company.findById(req.params.id);
@@ -151,19 +166,22 @@ const getCompanyEvents = async (req) => {
 
   return { pageEvents, totalPages };
 };
-const createMyCompany = async (req) => {
+const createMyCompany = async (req, res) => {
   const { company_name, email, location } = req.body;
 
-  if (!location || !company_name || !email)
-    return { message: "Content can not be empty" };
+  if (!location || !company_name || !email) {
+    res.json({ message: "Content can not be empty" });
+    return;
+  }
 
   var validRegex =
     /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
   if (!email.match(validRegex)) {
-    return {
+    res.json({
       message: "Email isn't valid",
-    };
+    });
+    return;
   }
 
   const newCompany = new Company({
@@ -214,7 +232,7 @@ const createMyCompany = async (req) => {
     message: "An Email sent to your account please verify",
   };
 };
-const getCompanyById = async (req) => {
+const getCompanyById = async (req, res) => {
   const company = await Company.findById(req.params.id);
   return company;
 };
@@ -237,10 +255,13 @@ const updatePromo = async (req, res) => {
     res.json({
       message: "Promo was creates",
     });
-  } else
+    return;
+  } else {
     res.json({
       message: "Your promo is still alive",
     });
+    return;
+  }
 };
 const giveSubPromo = async (req, res) => {
   const company = await Company.findById(req.params.id);
@@ -259,7 +280,10 @@ const giveSubPromo = async (req, res) => {
 
   const promocode = await Promocode.findOne({ company: req.params.id });
 
-  if (!promocode) return { message: "Firstly create a new promo" };
+  if (!promocode) {
+    res.json({ message: "Firstly create a new promo" });
+    return;
+  }
 
   // Для каждого пользователя добавляем промокод, если его нет в массиве промокодов пользователя
   for (const user of randomUsers) {
@@ -282,16 +306,18 @@ const giveSubPromo = async (req, res) => {
   res.json({
     message: "Promo was sent",
   });
+  return;
 };
 const inviteMembers = async (req, res) => {
   const { email } = req.body;
 
   const new_member = await User.findOne({ email: email });
-  if (!new_member)
-    return res.json({
-      success: false,
+  if (!new_member) {
+    res.json({
       message: "Sorry, user not founded!",
     });
+    return;
+  }
 
   const company = await Company.findById(req.params.id);
 
@@ -307,17 +333,54 @@ const inviteMembers = async (req, res) => {
   res.json({
     message: "An Email was sent",
   });
+  return;
 };
 const addNewMember = async (req, res) => {
   const user = await User.findById(req.user.id);
+  if (user.companies.includes(req.params.id)) {
+    res.json({
+      message: "You are already a member of this company.",
+    });
+    return;
+  }
   user.companies.push(req.params.id);
   await user.save();
   res.json({
     message: "You are member now!",
   });
+  return;
+};
+const loadPictures = async (req, res) => {
+  const company = await Company.findById(req.params.id);
+
+  console.log(company.admin.toString(), req.user.id.toString());
+  if (company.admin.toString() !== req.user.id.toString()) {
+    res.json({ message: "No access!" });
+    return;
+  }
+
+  let fileName = "";
+  if (req.files) {
+    fileName = req.files.files.name;
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const uploadDir = path.join(__dirname, "..", "uploads");
+    try {
+      await mkdir(uploadDir);
+    } catch (err) {
+      if (err.code !== "EEXIST") throw err;
+    }
+    req.files.files.mv(path.join(uploadDir, fileName));
+  }
+  if (fileName.length < 1) {
+    fileName = company.avatar;
+  }
+  if (fileName) company.avatar = fileName;
+  console.log(company.avatar);
+  return company;
 };
 
 export default {
+  loadPictures,
   getCompanyById,
   createMyCompany,
   deleteCompany,

@@ -7,7 +7,7 @@ export class CompanyController {
       res.json(deleteCompany);
     } catch (error) {
       console.log(error);
-      res.json({ message: "Deleting user error" });
+      res.json({ message: "Deleting company error" });
     }
   }
   async updateCompany(req, res) {
@@ -16,7 +16,7 @@ export class CompanyController {
       res.json(updateCompany);
     } catch (error) {
       console.log(error);
-      res.json({ message: "Updating user error" });
+      res.json({ message: "Updating company error" });
     }
   }
   async getCompanyEvents(req, res) {
@@ -76,6 +76,15 @@ export class CompanyController {
     } catch (error) {
       console.log(error);
       res.json({ message: "Adding members error" });
+    }
+  }
+  async loadPictures(req, res) {
+    try {
+      const loadPictures = await companyService.loadPictures(req, res);
+      res.json(loadPictures);
+    } catch (error) {
+      console.log(error);
+      res.json({ message: "Updating event error" });
     }
   }
 }

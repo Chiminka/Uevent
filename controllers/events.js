@@ -5,11 +5,7 @@ export class EventController {
     try {
       let userID = "";
       if (req.user) userID = req.user._id;
-      const getEventById = await eventService.getEventById(
-        req.params.id,
-        userID,
-        res
-      );
+      const getEventById = await eventService.getEventById(req, userID, res);
       res.json(getEventById);
     } catch (error) {
       console.log(error);

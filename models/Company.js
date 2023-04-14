@@ -5,6 +5,11 @@ const CompanySchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  avatar: {
+    type: String,
+    default:
+      "depositphotos_200738788-stock-illustration-default-placeholder-businesswoman-half-length.jpg",
+  },
   admin: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",

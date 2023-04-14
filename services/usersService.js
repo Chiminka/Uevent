@@ -54,11 +54,15 @@ const deleteUser = async (req, res) => {
     for (let i = 0; i < tickets.length; i++) {
       await Ticket.findOneAndDelete({ user: tickets[i].user });
     }
-    return { message: "Cookie were cleared, user was deleted" };
-  } else return { message: "No access!" };
+    res.json({ message: "Cookie were cleared, user was deleted" });
+    return;
+  } else {
+    res.json({ message: "No access!" });
+    return;
+  }
 };
 const loadProfilePhoto = async (req, res) => {
-  const user = await User.findById(req.params.id);
+  const user = await User.findById(req.user.id);
   let fileName = "";
   if (req.files) {
     fileName = req.files.files.name;
@@ -80,6 +84,7 @@ const loadProfilePhoto = async (req, res) => {
   res.json({
     message: "Photo was updated",
   });
+  return;
 };
 const updateMySubs = async (req, res) => {
   const { subscriptions_companies, subscriptions_events } = req.body;
@@ -116,7 +121,8 @@ const updateUser = async (req, res) => {
 
   const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password);
   if (!isPasswordCorrect) {
-    return { success: false, message: "Uncorrect password" };
+    res.json({ message: "Uncorrect password" });
+    return;
   }
 
   if (req.user._id.equals(user._id)) {
@@ -125,9 +131,10 @@ const updateUser = async (req, res) => {
     if (username && username !== user.username) {
       user.username = username;
       if (!username.match(/^[a-zA-Z0-9._]*$/)) {
-        return {
+        res.json({
           message: "Username isn't valid",
-        };
+        });
+        return;
       }
     }
 
@@ -159,9 +166,10 @@ const updateUser = async (req, res) => {
         /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
       if (!email.match(validRegex)) {
-        return {
+        res.json({
           message: "Email isn't valid",
-        };
+        });
+        return;
       }
       user.email = email;
       user.verified = false;
@@ -219,10 +227,13 @@ const updateUser = async (req, res) => {
     res.json({
       message: "User was updated",
     });
-  } else
+    return;
+  } else {
     res.json({
       message: "No access!",
     });
+    return;
+  }
 };
 const subscriptionTo = async (req, res) => {
   const user = await User.findById(req.user.id)

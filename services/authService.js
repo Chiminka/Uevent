@@ -4,35 +4,37 @@ import jwt from "jsonwebtoken";
 import mailTransport from "../utils/mailTransport.js";
 import asyncHandler from "express-async-handler";
 
-const register = async (userData, res) => {
-  const { username, full_name, password, email, repeatPassword } = userData;
+const register = async (req, res) => {
+  const { username, full_name, password, email, repeatPassword } = req.body;
 
   if (!username || !password || !email || !repeatPassword)
-    return { message: "Content can not be empty" };
+    res.json({
+      message: "Content can not be empty",
+    });
 
   if (password === repeatPassword) {
     const usernameExist = await User.findOne({ username });
     const emailExist = await User.findOne({ email });
     console.log(usernameExist, emailExist);
     if (emailExist || usernameExist) {
-      return {
+      res.json({
         message: "These username or email already are taken",
-      };
+      });
     }
 
     var validRegex =
       /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
     if (!email.match(validRegex)) {
-      return {
+      res.json({
         message: "Email isn't valid",
-      };
+      });
     }
 
     if (!username.match(/^[a-zA-Z0-9._]*$/)) {
-      return {
+      res.json({
         message: "Username isn't valid",
-      };
+      });
     }
 
     const salt = bcrypt.genSaltSync(10);
@@ -70,13 +72,15 @@ const register = async (userData, res) => {
       newUser,
       message: "An Email sent to your account please verify",
     };
-  } else return { message: "Different passwords" };
+  } else res.json({ message: "Different passwords" });
 };
-const login = async (userData, res) => {
-  const { username_or_email, password } = userData;
+const login = async (req, res) => {
+  const { username_or_email, password } = req.body;
 
-  if (!username_or_email || !password)
-    return { message: "Content can not be empty" };
+  if (!username_or_email || !password) {
+    res.json({ message: "Content can not be empty" });
+    return;
+  }
 
   let user = await User.findOne({ email: username_or_email });
 
@@ -85,7 +89,8 @@ const login = async (userData, res) => {
   }
 
   if (!user) {
-    return { success: false, message: "User not exist" };
+    res.json({ message: "User not exist" });
+    return;
   }
 
   const v_token = jwt.sign(
@@ -104,12 +109,14 @@ const login = async (userData, res) => {
       subject: "Verify your email account",
       html: `<h1>${url}</h1>`,
     });
-    return { message: "An Email sent to your account again" };
+    res.json({ message: "An Email sent to your account again" });
+    return;
   }
 
   const isPasswordCorrect = await bcrypt.compare(password, user.password);
   if (!isPasswordCorrect) {
-    return { success: false, message: "Uncorrect password" };
+    res.json({ message: "Uncorrect password" });
+    return;
   }
 
   const accessToken = jwt.sign(
@@ -144,38 +151,47 @@ const login = async (userData, res) => {
     message: "You are signed in",
   };
 };
-const logout = async (cookies, res) => {
-  if (!cookies?.jwt) return res.sendStatus(204); //No content
+const logout = async (req, res) => {
+  if (!req.cookies?.jwt) return res.sendStatus(204); //No content
   res.clearCookie("jwt", { httpOnly: true });
   res.clearCookie("accessToken", {
     httpOnly: true,
   });
-  return { message: "Cookie cleared" };
+  res.json({ message: "Cookie cleared" });
+  return;
 };
-const verifyEmail = async (token, req, res) => {
+const verifyEmail = async (req, res) => {
   jwt.verify(
-    token,
+    req.params.token,
     process.env.JWT_SECRET,
     asyncHandler(async (err, decoded) => {
       req.decoded = decoded.email;
-      if (err) return { message: "Forbidden" };
+      if (err) {
+        res.json({ message: "Forbidden" });
+        return;
+      }
     })
   );
   const user = await User.findOne({ email: req.decoded });
-  if (!user) return { success: false, message: "Sorry, user not found!" };
+  if (!user) {
+    res.json({ message: "Sorry, user not found!" });
+    return;
+  }
 
-  if (user.verified)
-    return {
-      success: false,
+  if (user.verified) {
+    res.json({
       message: "This account is already verified!",
-    };
+    });
+    return;
+  }
 
   user.verified = true;
   await user.save();
-  return { success: true, message: "Your email is verified" };
+  res.json({ message: "Your email is verified" });
+  return;
 };
-const getMe = async (user_id, res) => {
-  const user = await User.findById(user_id)
+const getMe = async (req, res) => {
+  const user = await User.findById(req.user.id)
     .populate({
       path: "subscriptions_events",
     })
@@ -185,22 +201,29 @@ const getMe = async (user_id, res) => {
     .populate("companies");
 
   if (!user) {
-    return {
+    res.json({
       message: "That user is not exist",
-    };
+    });
+    return;
   }
   return {
     user,
   };
 };
-const forgotPassword = async (body, res) => {
-  const { email } = body;
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
 
-  if (!email) return { message: "Content can not be empty" };
+  if (!email) {
+    res.json({ message: "Content can not be empty" });
+    return;
+  }
 
   const user = await User.findOne({ email });
 
-  if (!user) return { msg: "This email is not registered in our system" };
+  if (!user) {
+    res.json({ message: "This email is not registered in our system" });
+    return;
+  }
 
   const v_token = jwt.sign(
     {
@@ -218,43 +241,59 @@ const forgotPassword = async (body, res) => {
     subject: "Reset your password",
     html: `<h1>${url}</h1>`,
   });
-  return { message: "Re-send the password, please check your email" };
+  res.json({ message: "Re-send the password, please check your email" });
+  return;
 };
-const reset = async (body, token, req, res) => {
-  const { new_password, confirm_password } = body;
+const reset = async (req, res) => {
+  const { new_password, confirm_password } = req.body;
 
-  if (!new_password || !confirm_password || !token) {
-    return { message: "Content can not be empty" };
+  if (!new_password || !confirm_password || !req.params.token) {
+    res.json({ message: "Content can not be empty" });
+    return;
   }
 
   jwt.verify(
-    token,
+    req.params.token,
     process.env.JWT_SECRET,
     asyncHandler(async (err, decoded) => {
-      if (decoded === undefined) return { message: "Wrong token" };
+      if (decoded === undefined) {
+        res.json({ message: "Wrong token" });
+        return;
+      }
       req.decoded = decoded.email;
-      if (err) return { message: "Forbidden" };
+      if (err) {
+        res.json({ message: "Forbidden" });
+        return;
+      }
     })
   );
 
   const user = await User.findOne({ email: req.decoded });
-  if (!user) return { success: false, message: "Sorry, user not found!" };
+  if (!user) {
+    res.json({ message: "Sorry, user not found!" });
+    return;
+  }
 
-  if (new_password != confirm_password)
-    return { message: "Passwords are different" };
+  if (new_password != confirm_password) {
+    res.json({ message: "Passwords are different" });
+    return;
+  }
 
   const isPasswordCorrect = await bcrypt.compare(new_password, user.password);
-  if (isPasswordCorrect)
-    return {
+  if (isPasswordCorrect) {
+    res.json({
       message: "Your new password has to be different from your old",
-    };
+    });
+    return;
+  }
 
   const salt = bcrypt.genSaltSync(10);
   const hash = bcrypt.hashSync(new_password, salt);
 
   user.password = hash;
   await user.save();
-  return { success: true, message: "Your password was changed" };
+  res.json({ message: "Your password was changed" });
+  return;
 };
 
 export default {

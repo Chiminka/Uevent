@@ -16,14 +16,14 @@ const allThemes = async () => {
   const theme = await Theme.find();
   return theme;
 };
-const byId = async (id) => {
-  let category = await Theme.findById(id);
-  if (!category) category = await Format.findById(id);
+const byId = async (req) => {
+  let category = await Theme.findById(req.params.id);
+  if (!category) category = await Format.findById(req.params.id);
   return category;
 };
-const categoryEvents = async (id) => {
-  let category = await Theme.findById(id);
-  if (!category) category = await Format.findById(id);
+const categoryEvents = async (req) => {
+  let category = await Theme.findById(req.params.id);
+  if (!category) category = await Format.findById(req.params.id);
   const categoryId = category.id;
   let events = await Event.find({ formats: categoryId });
   if (events.length === 0) events = await Event.find({ themes: categoryId });

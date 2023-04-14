@@ -15,8 +15,8 @@ router.get("/tickets", verifyJWT, userController.getMyTickets);
 router.get("/companies", verifyJWT, userController.getMyCompanies);
 
 // Load my profile pic +
-// http://localhost:3002/api/users/:id/pic-load
-router.patch("/:id/pic-load", verifyJWT, userController.loadProfilePhoto);
+// http://localhost:3002/api/users/pic-load
+router.patch("/pic-load", verifyJWT, userController.loadProfilePhoto);
 
 // Delete user by id +
 // http://localhost:3002/api/users

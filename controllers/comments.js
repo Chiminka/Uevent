@@ -4,7 +4,7 @@ export class CommentController {
   // Get Comment By Id
   async byId(req, res) {
     try {
-      const byId = await commentService.byId(req.params.id);
+      const byId = await commentService.byId(req);
       res.json(byId);
     } catch (error) {
       console.log(error);
@@ -14,10 +14,7 @@ export class CommentController {
   // Remove comment
   async removeComment(req, res) {
     try {
-      const removeComment = await commentService.removeComment(
-        req.user._id,
-        req.params.id
-      );
+      const removeComment = await commentService.removeComment(req, res);
       res.json(removeComment);
     } catch (error) {
       res.json({ message: "Something gone wrong" });
@@ -26,11 +23,7 @@ export class CommentController {
   // Update Comment
   async UpdateComment(req, res) {
     try {
-      const UpdateComment = await commentService.UpdateComment(
-        req.user.id,
-        req.params.id,
-        req.body
-      );
+      const UpdateComment = await commentService.UpdateComment(res, req);
       res.json(UpdateComment);
     } catch (error) {
       console.log(error);

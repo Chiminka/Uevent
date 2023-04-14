@@ -46,4 +46,8 @@ router.post(
 // http://localhost:3002/api/companies/:id/add-new-member
 router.get("/:id/add-new-member", verifyJWT, companiesController.addNewMember);
 
+// Upload a picture +
+// http://localhost:3002/api/companies/:id/pic-load
+router.post("/:id/pic-load", verifyJWT, companiesController.loadPictures);
+
 export default router;
