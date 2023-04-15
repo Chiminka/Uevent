@@ -49,17 +49,27 @@ const UserSchema = new mongoose.Schema({
       default: [],
     },
   ],
-  social_net: [
-    {
-      type: {
-        type: String,
-        default: "",
-      },
-      link: {
-        type: String,
-        default: "",
-      },
+  social_net: {
+    instagram: {
+      type: String,
+      default: "",
     },
-  ],
+    facebook: {
+      type: String,
+      default: "",
+    },
+    telegram: {
+      type: String,
+      default: "",
+    },
+    whatsapp: {
+      type: String,
+      default: "",
+    },
+    viber: {
+      type: String,
+      default: "",
+    },
+  },
 });
 export default mongoose.model("User", UserSchema);

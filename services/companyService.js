@@ -74,7 +74,8 @@ const deleteCompany = async (req, res) => {
 };
 // если компания изменила данные о себе - оповестить
 const updateCompany = async (req, res) => {
-  const { company_name, email, location } = req.body;
+  const { company_name, email, location, description, my_social_net } =
+    req.body;
   const company = await Company.findById(req.params.id);
 
   if (company.admin.toString() === req.user.id.toString()) {
@@ -103,6 +104,12 @@ const updateCompany = async (req, res) => {
         }
     }
 
+    if (my_social_net) {
+      company.social_net = my_social_net;
+    }
+    if (description) {
+      company.description = description;
+    }
     if (company_name) {
       company.company_name = company_name;
     }
@@ -167,7 +174,8 @@ const getCompanyEvents = async (req, res) => {
   return { pageEvents, totalPages };
 };
 const createMyCompany = async (req, res) => {
-  const { company_name, email, location } = req.body;
+  const { company_name, email, location, description, my_social_net } =
+    req.body;
 
   if (!location || !company_name || !email) {
     res.json({ message: "Content can not be empty" });
@@ -188,6 +196,8 @@ const createMyCompany = async (req, res) => {
     company_name,
     email,
     location,
+    description,
+    social_net: my_social_net,
     admin: req.user.id,
   });
 
@@ -199,10 +209,6 @@ const createMyCompany = async (req, res) => {
     process.env.JWT_SECRET,
     { expiresIn: "10m" }
   );
-
-  const user = await User.findById(req.user.id);
-  user.companies.push(newCompany.id);
-  await user.save();
 
   // создаем новый объект Date с текущей датой и временем
   var currentDate = new Date();
@@ -378,8 +384,13 @@ const loadPictures = async (req, res) => {
   console.log(company.avatar);
   return company;
 };
+const getCompaniesUsers = async (req, res) => {
+  const users = await User.find({ companies: { $in: [req.params.id] } });
+  return users;
+};
 
 export default {
+  getCompaniesUsers,
   loadPictures,
   getCompanyById,
   createMyCompany,

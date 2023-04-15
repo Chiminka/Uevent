@@ -120,7 +120,10 @@ const createEvent = async (req, res) => {
     return;
   }
 
-  if (!user.companies.includes(company.id)) {
+  if (
+    !user.companies.includes(company.id) &&
+    company.admin.toString() !== req.user.id.toString()
+  ) {
     res.json({ message: "Access denied" });
     return;
   }
@@ -240,7 +243,10 @@ const deleteEvent = async (req, res) => {
   const tickets = await Ticket.find({ event: eventID });
   const company = await Company.findById(req.params.companyId);
 
-  if (user.companies.includes(company.id)) {
+  if (
+    user.companies.includes(company.id) ||
+    company.admin.toString() === req.user.id.toString()
+  ) {
     const users = await User.find({
       $or: [
         { subscriptions_companies: company.id },
@@ -339,11 +345,13 @@ const updateEvent = async (req, res) => {
     return;
   }
 
-  console.log(company);
   const eventId = event.id;
   const user = await User.findById(req.user.id);
 
-  if (user.companies.includes(company.id)) {
+  if (
+    user.companies.includes(company.id) ||
+    company.admin.toString() === req.user.id.toString()
+  ) {
     const all_tickets = await Ticket.find({ event: eventId });
 
     const users = await User.find();
@@ -559,7 +567,7 @@ const after_buying_action = async (req, res) => {
         } tickets from "Afisha" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location.description}</h2>
-        <h1>Was paid: ${bought_tickets[i].price}</h1>`,
+        <h1>Was paid: ${bought_tickets[i].price / 100}</h1>`,
       });
     }
 

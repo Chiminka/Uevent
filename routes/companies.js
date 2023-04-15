@@ -50,4 +50,8 @@ router.get("/:id/add-new-member", verifyJWT, companiesController.addNewMember);
 // http://localhost:3002/api/companies/:id/pic-load
 router.post("/:id/pic-load", verifyJWT, companiesController.loadPictures);
 
+// Get companies users -
+// http://localhost:3002/api/companies/:id/users
+router.get("/:id/users", verifyJWT, companiesController.getCompaniesUsers);
+
 export default router;

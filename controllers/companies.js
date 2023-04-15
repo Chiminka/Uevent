@@ -87,4 +87,16 @@ export class CompanyController {
       res.json({ message: "Updating event error" });
     }
   }
+  async getCompaniesUsers(req, res) {
+    try {
+      const getCompaniesUsers = await companyService.getCompaniesUsers(
+        req,
+        res
+      );
+      res.json(getCompaniesUsers);
+    } catch (error) {
+      console.log(error);
+      res.json({ message: "Getting users error" });
+    }
+  }
 }

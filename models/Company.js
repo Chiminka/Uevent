@@ -19,6 +19,10 @@ const CompanySchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  description: {
+    type: String,
+    default: "",
+  },
   verified: {
     type: Boolean,
     default: false,
@@ -26,6 +30,28 @@ const CompanySchema = new mongoose.Schema({
   location: {
     type: String,
     required: true,
+  },
+  social_net: {
+    instagram: {
+      type: String,
+      default: "",
+    },
+    facebook: {
+      type: String,
+      default: "",
+    },
+    telegram: {
+      type: String,
+      default: "",
+    },
+    whatsapp: {
+      type: String,
+      default: "",
+    },
+    viber: {
+      type: String,
+      default: "",
+    },
   },
 });
 export default mongoose.model("Company", CompanySchema);

@@ -81,7 +81,10 @@ const loadProfilePhoto = async (req, res) => {
   }
   user.avatar = fileName;
   await user.save();
-  return { user, message: "Photo was updated",}
+  res.json({
+    message: "Photo was updated",
+  });
+  return;
 };
 const updateMySubs = async (req, res) => {
   const { subscriptions_companies, subscriptions_events } = req.body;
@@ -142,10 +145,7 @@ const updateUser = async (req, res) => {
       user.companies = companies;
     }
 
-    if (
-      my_social_net &&
-      JSON.stringify(my_social_net) !== JSON.stringify(user.social_net)
-    ) {
+    if (my_social_net) {
       user.social_net = my_social_net;
     }
 
@@ -221,10 +221,10 @@ const updateUser = async (req, res) => {
     }
 
     await user.save();
-    return {
-        user,
-        message: "User was updated",
-      };
+    res.json({
+      message: "User was updated",
+    });
+    return;
   } else {
     res.json({
       message: "No access!",
