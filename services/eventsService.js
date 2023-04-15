@@ -562,12 +562,10 @@ const after_buying_action = async (req, res) => {
         from: process.env.USER,
         to: company.email,
         subject: `The new member on your event from "Let's go together"`,
-        html: `<h1>${user.full_name} bought ${
-          bought_tickets[i].quantity
-        } tickets from "Afisha" on ${event.title}</h1>
+        html: `<h1>${user.full_name} bought ${bought_tickets[i].quantity} tickets from "Let's go together" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location.description}</h2>
-        <h1>Was paid: ${bought_tickets[i].price / 100}</h1>`,
+        <h1>Was paid: ${bought_tickets[i].price}</h1>`,
       });
     }
 
