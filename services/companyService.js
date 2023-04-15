@@ -6,6 +6,7 @@ import Company from "../models/Company.js";
 import Ticket from "../models/Ticket.js";
 import promo from "../utils/create_promo.js";
 import Promocode from "../models/Promocode.js";
+import asyncHandler from "express-async-handler";
 
 import { fileURLToPath } from "url";
 import path, { dirname } from "path";
@@ -225,7 +226,7 @@ const createMyCompany = async (req, res) => {
   await newPromo.save();
 
   // verification email
-  const url = `${process.env.BASE_URL}verify/${v_token}`;
+  const url = `${process.env.BASE_URL}verify_company/${v_token}`;
   mailTransport().sendMail({
     from: process.env.USER,
     to: newCompany.email,
@@ -388,8 +389,42 @@ const getCompaniesUsers = async (req, res) => {
   const users = await User.find({ companies: { $in: [req.params.id] } });
   return users;
 };
+const verifyEmail = async (req, res) => {
+  jwt.verify(
+    req.params.token,
+    process.env.JWT_SECRET,
+    asyncHandler(async (err, decoded) => {
+      console.log(decoded);
+      req.decoded = decoded.email;
+      if (err) {
+        res.json({ message: "Forbidden" });
+        return;
+      }
+    })
+  );
+  const company = await Company.findOne({ email: req.decoded });
+
+  if (!company) {
+    res.json({ message: "Sorry, user not found!" });
+    return;
+  }
+
+  if (company.verified) {
+    res.json({
+      message: "This account is already verified!",
+    });
+    return;
+  }
+
+  company.verified = true;
+  await company.save();
+
+  res.json({ message: "Your email is verified" });
+  return;
+};
 
 export default {
+  verifyEmail,
   getCompaniesUsers,
   loadPictures,
   getCompanyById,

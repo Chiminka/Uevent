@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import mailTransport from "../utils/mailTransport.js";
 import asyncHandler from "express-async-handler";
+import Company from "../models/Company.js";
 
 const register = async (req, res) => {
   const { username, full_name, password, email, repeatPassword } = req.body;
@@ -173,6 +174,7 @@ const verifyEmail = async (req, res) => {
     })
   );
   const user = await User.findOne({ email: req.decoded });
+
   if (!user) {
     res.json({ message: "Sorry, user not found!" });
     return;
@@ -187,6 +189,7 @@ const verifyEmail = async (req, res) => {
 
   user.verified = true;
   await user.save();
+
   res.json({ message: "Your email is verified" });
   return;
 };

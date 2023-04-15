@@ -99,4 +99,13 @@ export class CompanyController {
       res.json({ message: "Getting users error" });
     }
   }
+  async verifyEmail(req, res) {
+    try {
+      const verifyEmail = await companyService.verifyEmail(req, res);
+      res.json(verifyEmail);
+    } catch (error) {
+      console.log(error);
+      res.json({ message: "verifying error" });
+    }
+  }
 }
