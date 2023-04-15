@@ -29,12 +29,13 @@ const getMyTickets = async (req, res) => {
 const getMyCompanies = async (req, res) => {
   // получить все компании
   const user = await User.findById(req.user.id);
-  let mas = [];
+  let membership_companies = [];
   for (let i = 0; i < user.companies.length; i++) {
     let myCompanies = await Company.findById(user.companies[i]);
-    mas.push(myCompanies);
+    membership_companies.push(myCompanies);
   }
-  return mas;
+  const my_company = await Company.find({ admin: req.user.id });
+  return { membership_companies, my_company };
 };
 const deleteUser = async (req, res) => {
   const user = await User.findById(req.user.id);
