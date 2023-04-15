@@ -549,9 +549,7 @@ const after_buying_action = async (req, res) => {
       from: company.email,
       to: user.email,
       subject: `Your tickets from "Let's go together"`,
-      html: `<h1>${user.full_name} bought ${
-        bought_tickets[i].quantity
-      } tickets from "Let's go together" on ${event.title}</h1>
+      html: `<h1>${user.full_name} bought ${bought_tickets[i].quantity} tickets from "Let's go together" on ${event.title}</h1>
         <h2>Starts at ${date}</h2>
         <h2>Address: ${event.location.description}</h2>
         <h1>Was paid: ${bought_tickets[i].price}</h1>`,

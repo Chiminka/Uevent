@@ -82,10 +82,7 @@ const loadProfilePhoto = async (req, res) => {
   }
   user.avatar = fileName;
   await user.save();
-  res.json({
-    message: "Photo was updated",
-  });
-  return;
+  return { user, message: "Photo was updated" };
 };
 const updateMySubs = async (req, res) => {
   const { subscriptions_companies, subscriptions_events } = req.body;
@@ -222,10 +219,7 @@ const updateUser = async (req, res) => {
     }
 
     await user.save();
-    res.json({
-      message: "User was updated",
-    });
-    return;
+    return { user, message: "User was updated" };
   } else {
     res.json({
       message: "No access!",
