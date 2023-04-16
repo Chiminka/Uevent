@@ -31,7 +31,7 @@ const UpdateComment = async (res, req) => {
     const com = await Comment.findById(req.params.id);
     com.comment = comment;
     await com.save();
-    return com;
+    return { com };
   } else {
     res.json({ message: "That's not your comment" });
     return;

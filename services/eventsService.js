@@ -228,7 +228,7 @@ const createEvent = async (req, res) => {
       });
     }
 
-  return newEvent;
+  return { newEvent };
 };
 // если компания удалила ивент - оповестить
 const deleteEvent = async (req, res) => {
@@ -436,7 +436,7 @@ const updateEvent = async (req, res) => {
     if (members_visibles) event.members_visibles = members_visibles;
 
     await event.save();
-    return event;
+    return { event };
   } else {
     res.json({ message: "No access!" });
     return;
@@ -598,7 +598,7 @@ const createComment = async (req, res) => {
     event: req.params.id,
   });
   await newComment.save();
-  return newComment;
+  return { newComment };
 };
 const getEventComments = async (req, res) => {
   const eventId = req.params.id;
@@ -637,7 +637,7 @@ const getEventCategory = async (req, res) => {
   //   })
   // );
 
-  return { mas };
+  return mas;
 };
 
 export default {

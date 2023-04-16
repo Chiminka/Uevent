@@ -8,10 +8,12 @@ import Company from "../models/Company.js";
 const register = async (req, res) => {
   const { username, full_name, password, email, repeatPassword } = req.body;
 
-  if (!username || !password || !email || !repeatPassword)
+  if (!username || !password || !email || !repeatPassword) {
     res.json({
       message: "Content can not be empty",
     });
+    return;
+  }
 
   if (password === repeatPassword) {
     const usernameExist = await User.findOne({ username });
@@ -21,6 +23,7 @@ const register = async (req, res) => {
       res.json({
         message: "These username or email already are taken",
       });
+      return;
     }
 
     var validRegex =
@@ -30,12 +33,14 @@ const register = async (req, res) => {
       res.json({
         message: "Email isn't valid",
       });
+      return;
     }
 
     if (!username.match(/^[a-zA-Z0-9._]*$/)) {
       res.json({
         message: "Username isn't valid",
       });
+      return;
     }
 
     const salt = bcrypt.genSaltSync(10);
@@ -73,7 +78,10 @@ const register = async (req, res) => {
       newUser,
       message: "An Email sent to your account please verify",
     };
-  } else res.json({ message: "Different passwords" });
+  } else {
+    res.json({ message: "Different passwords" });
+    return;
+  }
 };
 const login = async (req, res) => {
   const { username_or_email, password } = req.body;
