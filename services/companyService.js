@@ -280,8 +280,7 @@ const giveSubPromo = async (req, res) => {
   const promocode = await Promocode.findOne({ company: req.params.id });
 
   if (!promocode) {
-    res.json({ message: "Firstly create a new promo" });
-    return;
+    return { message: "Firstly create a new promo" };
   }
 
   // Для каждого пользователя добавляем промокод, если его нет в массиве промокодов пользователя
@@ -302,20 +301,18 @@ const giveSubPromo = async (req, res) => {
       });
     }
   }
-  res.json({
+  return {
     message: "Promo was sent",
-  });
-  return;
+  };
 };
 const inviteMembers = async (req, res) => {
   const { email } = req.body;
 
   const new_member = await User.findOne({ email: email });
   if (!new_member) {
-    res.json({
+    return {
       message: "Sorry, user not founded!",
-    });
-    return;
+    };
   }
 
   const company = await Company.findById(req.params.id);
@@ -329,33 +326,29 @@ const inviteMembers = async (req, res) => {
     html: `<h1>${url}</h1>`,
   });
   ////////////////////////////////////////
-  res.json({
+  return {
     message: "An Email was sent",
-  });
-  return;
+  };
 };
 const addNewMember = async (req, res) => {
   const user = await User.findById(req.user.id);
   if (user.companies.includes(req.params.id)) {
-    res.json({
+    return {
       message: "You are already a member of this company.",
-    });
-    return;
+    };
   }
   user.companies.push(req.params.id);
   await user.save();
-  res.json({
+  return {
     message: "You are member now!",
-  });
-  return;
+  };
 };
 const loadPictures = async (req, res) => {
   const company = await Company.findById(req.params.id);
 
   console.log(company.admin.toString(), req.user.id.toString());
   if (company.admin.toString() !== req.user.id.toString()) {
-    res.json({ message: "No access!" });
-    return;
+    return { message: "No access!" };
   }
 
   let fileName = "";
@@ -375,11 +368,11 @@ const loadPictures = async (req, res) => {
   }
   if (fileName) company.avatar = fileName;
   await company.save();
-  return company;
+  return { company };
 };
 const getCompaniesUsers = async (req, res) => {
   const users = await User.find({ companies: { $in: [req.params.id] } });
-  return users;
+  return { users };
 };
 const verifyEmail = async (req, res) => {
   jwt.verify(
@@ -389,30 +382,26 @@ const verifyEmail = async (req, res) => {
       console.log(decoded);
       req.decoded = decoded.email;
       if (err) {
-        res.json({ message: "Forbidden" });
-        return;
+        return { message: "Forbidden" };
       }
     })
   );
   const company = await Company.findOne({ email: req.decoded });
 
   if (!company) {
-    res.json({ message: "Sorry, user not found!" });
-    return;
+    return { message: "Sorry, user not found!" };
   }
 
   if (company.verified) {
-    res.json({
+    return {
       message: "This account is already verified!",
-    });
-    return;
+    };
   }
 
   company.verified = true;
   await company.save();
 
-  res.json({ message: "Your email is verified" });
-  return;
+  return { message: "Your email is verified" };
 };
 
 export default {
