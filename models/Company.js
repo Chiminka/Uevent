@@ -28,7 +28,7 @@ const CompanySchema = new mongoose.Schema({
     default: false,
   },
   location: {
-    type: String,
+    type: Object,
     required: true,
   },
   social_net: {

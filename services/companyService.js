@@ -66,11 +66,9 @@ const deleteCompany = async (req, res) => {
     for (let i = 0; i < events.length; i++) {
       await Event.findOneAndDelete({ author: events[i].author });
     }
-    res.json({ message: "Company was deleted" });
-    return;
+    return { message: "Company was deleted" };
   } else {
-    res.json({ message: "No access!" });
-    return;
+    return { message: "No access!" };
   }
 };
 // если компания изменила данные о себе - оповестить
@@ -117,15 +115,14 @@ const updateCompany = async (req, res) => {
     if (location) {
       company.location = location;
     }
-    if (email) {
+    if (email && email !== company.email) {
       var validRegex =
         /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
       if (!email.match(validRegex)) {
-        res.json({
+        return {
           message: "Email isn't valid",
-        });
-        return;
+        };
       }
       company.email = email;
       company.verified = false;
@@ -138,7 +135,7 @@ const updateCompany = async (req, res) => {
       );
 
       // verification email
-      const url = `${process.env.BASE_URL}verify/${v_token}`;
+      const url = `${process.env.BASE_URL}verify_company/${v_token}`;
       mailTransport().sendMail({
         from: process.env.USER,
         to: company.email,
@@ -152,10 +149,9 @@ const updateCompany = async (req, res) => {
       };
     }
     await company.save();
-    return company;
+    return { company };
   } else {
-    res.json({ message: "No access!" });
-    return;
+    return { message: "No access!" };
   }
 };
 const getCompanyEvents = async (req, res) => {
@@ -179,18 +175,16 @@ const createMyCompany = async (req, res) => {
     req.body;
 
   if (!location || !company_name || !email) {
-    res.json({ message: "Content can not be empty" });
-    return;
+    return { message: "Content can not be empty" };
   }
 
   var validRegex =
     /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
   if (!email.match(validRegex)) {
-    res.json({
+    return {
       message: "Email isn't valid",
-    });
-    return;
+    };
   }
 
   const newCompany = new Company({
@@ -241,7 +235,7 @@ const createMyCompany = async (req, res) => {
 };
 const getCompanyById = async (req, res) => {
   const company = await Company.findById(req.params.id);
-  return company;
+  return { company };
 };
 const updatePromo = async (req, res) => {
   const promo_code = await Promocode.findOne({ company: req.params.id });
@@ -259,15 +253,13 @@ const updatePromo = async (req, res) => {
     });
     await newPromo.save();
 
-    res.json({
+    return {
       message: "Promo was creates",
-    });
-    return;
+    };
   } else {
-    res.json({
+    return {
       message: "Your promo is still alive",
-    });
-    return;
+    };
   }
 };
 const giveSubPromo = async (req, res) => {
@@ -382,7 +374,7 @@ const loadPictures = async (req, res) => {
     fileName = company.avatar;
   }
   if (fileName) company.avatar = fileName;
-  console.log(company.avatar);
+  await company.save();
   return company;
 };
 const getCompaniesUsers = async (req, res) => {
