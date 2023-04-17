@@ -323,8 +323,17 @@ const inviteMembers = async (req, res) => {
 
   const company = await Company.findById(req.params.id);
 
+  const v_token = jwt.sign(
+    {
+      id_user: new_member.id,
+      id_company: req.params.id,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "10m" }
+  );
+
   // verification email
-  const url = `${process.env.BASE_URL}companies/${req.params.id}/add-new-member`;
+  const url = `${process.env.BASE_URL}companies/${v_token}/add-new-member`;
   mailTransport().sendMail({
     from: process.env.USER,
     to: email,
@@ -337,13 +346,24 @@ const inviteMembers = async (req, res) => {
   };
 };
 const addNewMember = async (req, res) => {
-  const user = await User.findById(req.user.id);
-  if (user.companies.includes(req.params.id)) {
+  jwt.verify(
+    req.params.token,
+    process.env.JWT_SECRET,
+    asyncHandler(async (err, decoded) => {
+      req.decoded_company = decoded.id_company;
+      req.decoded_user = decoded.id_user;
+      if (err) {
+        return { message: "Forbidden" };
+      }
+    })
+  );
+  const user = await User.findById(req.decoded_user);
+  if (user.companies.includes(req.decoded_company)) {
     return {
       message: "You are already a member of this company.",
     };
   }
-  user.companies.push(req.params.id);
+  user.companies.push(req.decoded_company);
   await user.save();
   return {
     message: "You are member now!",

@@ -44,7 +44,11 @@ router.post(
 
 // Invite friend to company +
 // http://localhost:3002/api/companies/:id/add-new-member
-router.get("/:id/add-new-member", verifyJWT, companiesController.addNewMember);
+router.get(
+  "/:token/add-new-member",
+  verifyJWT,
+  companiesController.addNewMember
+);
 
 // Upload a picture +
 // http://localhost:3002/api/companies/:id/pic-load
