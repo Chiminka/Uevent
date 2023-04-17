@@ -155,7 +155,7 @@ const updateCompany = async (req, res) => {
   }
 };
 const getCompanyEvents = async (req, res) => {
-  const page = req.body;
+  const page = req.params.page;
   // получить все ивенты компании
   const company = await Company.findById(req.params.id);
   const userId = company.id;
@@ -163,8 +163,8 @@ const getCompanyEvents = async (req, res) => {
     "-date_event"
   );
   const pageSize = 10;
-  const startIndex = (page.page - 1) * pageSize;
-  const endIndex = page.page * pageSize;
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = page * pageSize;
   const pageEvents = events.slice(startIndex, endIndex);
   const totalPages = Math.ceil(events.length / pageSize);
 

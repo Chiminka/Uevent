@@ -15,8 +15,8 @@ router.post("/", verifyJWT, companiesController.createMyCompany);
 router.get("/:id", verifyJWT, companiesController.getCompanyById);
 
 //Show all company's events, limit in 5 +
-// http://localhost:3002/api/companies/:id/events
-router.get("/:id/events", companiesController.getCompanyEvents);
+// http://localhost:3002/api/companies/:id/events/:page
+router.get("/:id/events/:page", companiesController.getCompanyEvents);
 
 // Delete company by id +
 // http://localhost:3002/api/companies/:id
