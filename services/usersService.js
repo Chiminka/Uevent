@@ -207,6 +207,7 @@ const updateUser = async (req, res) => {
         html: `<h1>${url}</h1>`,
       });
       await user.save();
+      console.log("user", user);
       return {
         user,
         message: "An Email sent to your account please verify",
@@ -216,9 +217,7 @@ const updateUser = async (req, res) => {
     await user.save();
     return { user, message: "User was updated" };
   } else {
-    return {
-      message: "No access!",
-    };
+    return { message: "No access!" };
   }
 };
 const subscriptionTo = async (req, res) => {

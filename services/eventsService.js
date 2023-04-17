@@ -119,10 +119,7 @@ const createEvent = async (req, res) => {
     return { message: "No such a company" };
   }
 
-  if (
-    !user.companies.includes(company.id) &&
-    company.admin.toString() !== req.user.id.toString()
-  ) {
+  if (!user.companies.includes(company.id)) {
     return { message: "Access denied" };
   }
 
@@ -238,10 +235,7 @@ const deleteEvent = async (req, res) => {
   const tickets = await Ticket.find({ event: eventID });
   const company = await Company.findById(req.params.companyId);
 
-  if (
-    user.companies.includes(company.id) ||
-    company.admin.toString() === req.user.id.toString()
-  ) {
+  if (user.companies.includes(company.id)) {
     const users = await User.find({
       $or: [
         { subscriptions_companies: company.id },
@@ -338,10 +332,7 @@ const updateEvent = async (req, res) => {
   const eventId = event.id;
   const user = await User.findById(req.user.id);
 
-  if (
-    user.companies.includes(company.id) ||
-    company.admin.toString() === req.user.id.toString()
-  ) {
+  if (user.companies.includes(company.id)) {
     const all_tickets = await Ticket.find({ event: eventId });
 
     const users = await User.find();

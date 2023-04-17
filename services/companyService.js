@@ -197,6 +197,11 @@ const createMyCompany = async (req, res) => {
   });
 
   await newCompany.save();
+
+  const user = await User.findById(req.user.id);
+  user.companies.push(req.user.id);
+  await user.save();
+
   const v_token = jwt.sign(
     {
       email: newCompany.email,
