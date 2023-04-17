@@ -199,8 +199,9 @@ const createMyCompany = async (req, res) => {
   await newCompany.save();
 
   const user = await User.findById(req.user.id);
-  user.companies.push(req.user.id);
+  user.companies.push(newCompany.id);
   await user.save();
+  console.log(user);
 
   const v_token = jwt.sign(
     {
