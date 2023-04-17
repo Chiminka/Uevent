@@ -108,4 +108,13 @@ export class CompanyController {
       res.json({ message: "verifying error" });
     }
   }
+  async getPromo(req, res) {
+    try {
+      const getPromo = await companyService.getPromo(req, res);
+      res.json(getPromo);
+    } catch (error) {
+      console.log(error);
+      res.json({ message: "verifying error" });
+    }
+  }
 }

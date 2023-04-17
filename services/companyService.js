@@ -244,6 +244,9 @@ const getCompanyById = async (req, res) => {
   return company;
 };
 const updatePromo = async (req, res) => {
+  if (req.params.id === null || req.params.id === underfind)
+    return { message: "no companies" };
+
   const promo_code = await Promocode.findOne({ company: req.params.id });
   if (!promo_code) {
     // создаем новый объект Date с текущей датой и временем
@@ -260,7 +263,7 @@ const updatePromo = async (req, res) => {
     await newPromo.save();
 
     return {
-      message: "Promo was creates",
+      message: "Promo was created",
     };
   } else {
     return {
@@ -269,6 +272,8 @@ const updatePromo = async (req, res) => {
   }
 };
 const giveSubPromo = async (req, res) => {
+  if (req.params.id === null || req.params.id === underfind)
+    return { message: "no companies" };
   const company = await Company.findById(req.params.id);
 
   // фильтруем пользователей, чтобы оставить только тех, у кого есть подписки на компанию
@@ -429,8 +434,13 @@ const verifyEmail = async (req, res) => {
 
   return { message: "Your email is verified" };
 };
+const getPromo = async (req, res) => {
+  const promos = await Promocode.find({ company: req.params.id });
+  return { promos };
+};
 
 export default {
+  getPromo,
   verifyEmail,
   getCompaniesUsers,
   loadPictures,

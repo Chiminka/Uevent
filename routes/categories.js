@@ -5,6 +5,7 @@ import { verifyJWT } from "../utils/checkAuth.js";
 const categoryController = new CategoryController();
 
 const router = new Router();
+router.use(verifyJWT);
 
 // Get all themes +
 // http://localhost:3002/api/categories/themes

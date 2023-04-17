@@ -102,6 +102,7 @@ export class EventController {
       const getEventComments = await eventService.getEventComments(req, res);
       res.json(getEventComments);
     } catch (error) {
+      console.log(error);
       res.json({ message: "Something gone wrong" });
     }
   }

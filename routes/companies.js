@@ -12,7 +12,7 @@ router.post("/", verifyJWT, companiesController.createMyCompany);
 
 // Get company by id +
 // http://localhost:3002/api/companies/:id
-router.get("/:id", companiesController.getCompanyById);
+router.get("/:id", verifyJWT, companiesController.getCompanyById);
 
 //Show all company's events, limit in 5 +
 // http://localhost:3002/api/companies/:id/events/:page
@@ -61,5 +61,9 @@ router.get("/:id/users", verifyJWT, companiesController.getCompaniesUsers);
 // Verify email +
 // http://localhost:3002/api/companies/verify_company/:token
 router.get("/verify_company/:token", companiesController.verifyEmail);
+
+// Get company promo +
+// http://localhost:3002/api/companies/:id/promos
+router.get("/:id/promos", companiesController.getPromo);
 
 export default router;
