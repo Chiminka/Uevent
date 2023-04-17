@@ -580,10 +580,12 @@ const createComment = async (req, res) => {
 };
 const getEventComments = async (req, res) => {
   const eventId = req.params.id;
-  const comments = await Comment.find({ event: eventId }).populate({
-    path: "author",
-    select: "username avatar",
-  });
+  const comments = await Comment.find({ event: eventId })
+    .populate({
+      path: "author",
+      select: "username avatar",
+    })
+    .sort("-date_event");
   return comments;
 };
 const getEventCategory = async (req, res) => {
