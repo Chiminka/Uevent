@@ -162,7 +162,7 @@ const getCompanyEvents = async (req, res) => {
   const events = await Event.find({ author: { _id: userId } }).sort(
     "-date_event"
   );
-  const pageSize = 10;
+  const pageSize = 5;
   const startIndex = (page - 1) * pageSize;
   const endIndex = page * pageSize;
   const pageEvents = events.slice(startIndex, endIndex);
