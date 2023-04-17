@@ -244,7 +244,7 @@ const getCompanyById = async (req, res) => {
   return company;
 };
 const updatePromo = async (req, res) => {
-  if (req.params.id === null || req.params.id === underfind)
+  if (req.params.id === null || req.params.id === 'underfind')
     return { message: "no companies" };
 
   const promo_code = await Promocode.findOne({ company: req.params.id });
@@ -272,7 +272,7 @@ const updatePromo = async (req, res) => {
   }
 };
 const giveSubPromo = async (req, res) => {
-  if (req.params.id === null || req.params.id === underfind)
+  if (req.params.id === null || req.params.id === 'underfind')
     return { message: "no companies" };
   const company = await Company.findById(req.params.id);
 
