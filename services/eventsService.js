@@ -585,7 +585,7 @@ const getEventComments = async (req, res) => {
       path: "author",
       select: "username avatar",
     })
-    .sort("-date_event");
+    .sort("-updatedAt");
   return comments;
 };
 const getEventCategory = async (req, res) => {
