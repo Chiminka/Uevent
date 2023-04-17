@@ -55,11 +55,9 @@ const deleteUser = async (req, res) => {
     for (let i = 0; i < tickets.length; i++) {
       await Ticket.findOneAndDelete({ user: tickets[i].user });
     }
-    res.json({ message: "Cookie were cleared, user was deleted" });
-    return;
+    return { message: "Cookie were cleared, user was deleted" };
   } else {
-    res.json({ message: "No access!" });
-    return;
+    return { message: "No access!" };
   }
 };
 const loadProfilePhoto = async (req, res) => {
@@ -119,8 +117,7 @@ const updateUser = async (req, res) => {
 
   const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password);
   if (!isPasswordCorrect) {
-    res.json({ message: "Uncorrect password" });
-    return;
+    return { message: "Uncorrect password" };
   }
 
   if (req.user._id.equals(user._id)) {
@@ -129,10 +126,9 @@ const updateUser = async (req, res) => {
     if (username && username !== user.username) {
       user.username = username;
       if (!username.match(/^[a-zA-Z0-9._]*$/)) {
-        res.json({
+        return {
           message: "Username isn't valid",
-        });
-        return;
+        };
       }
     }
 
@@ -161,10 +157,9 @@ const updateUser = async (req, res) => {
         /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
       if (!email.match(validRegex)) {
-        res.json({
+        return {
           message: "Email isn't valid",
-        });
-        return;
+        };
       }
       user.email = email;
       user.verified = false;
@@ -221,10 +216,9 @@ const updateUser = async (req, res) => {
     await user.save();
     return { user, message: "User was updated" };
   } else {
-    res.json({
+    return {
       message: "No access!",
-    });
-    return;
+    };
   }
 };
 const subscriptionTo = async (req, res) => {

@@ -116,21 +116,18 @@ const createEvent = async (req, res) => {
   const user = await User.findById(req.user.id);
 
   if (!company) {
-    res.json({ message: "No such a company" });
-    return;
+    return { message: "No such a company" };
   }
 
   if (
     !user.companies.includes(company.id) &&
     company.admin.toString() !== req.user.id.toString()
   ) {
-    res.json({ message: "Access denied" });
-    return;
+    return { message: "Access denied" };
   }
 
   if (!company.verified) {
-    res.json({ message: "Company is not verified" });
-    return;
+    return { message: "Company is not verified" };
   }
 
   let {
@@ -158,8 +155,7 @@ const createEvent = async (req, res) => {
     !formats ||
     !price
   ) {
-    res.json({ message: "Content can not be empty" });
-    return;
+    return { message: "Content can not be empty" };
   }
 
   if (date_event) {
@@ -235,8 +231,7 @@ const deleteEvent = async (req, res) => {
   // может только компания, которая создала
   const event = await Event.findById(req.params.eventId);
   if (event === null) {
-    res.json({ message: "this event doesn't exist" });
-    return;
+    return { message: "this event doesn't exist" };
   }
   const eventID = event.id;
   const user = await User.findById(req.user.id);
@@ -303,16 +298,13 @@ const deleteEvent = async (req, res) => {
       ]);
       // удаляется промо на этот ивент и сам ивент
       await Promise.all([Event.findByIdAndDelete(req.params.eventId)]);
-      res.json({ message: "Event was deleted and members were warned" });
-      return;
+      return { message: "Event was deleted and members were warned" };
     } else {
       await Promise.all([Event.findByIdAndDelete(req.params.eventId)]);
-      res.json({ message: "Event was deleted" });
-      return;
+      return { message: "Event was deleted" };
     }
   } else {
-    res.json({ message: "No access!" });
-    return;
+    return { message: "No access!" };
   }
 };
 // если компания изменила ивент - оповестить
@@ -334,15 +326,13 @@ const updateEvent = async (req, res) => {
   } = req.body;
 
   if (!req.params.companyId) {
-    res.json({ message: "Provide an id of event company" });
-    return;
+    return { message: "Provide an id of event company" };
   }
 
   const company = await Company.findById(req.params.companyId);
   const event = await Event.findById(req.params.eventId);
   if (event === null) {
-    res.json({ message: "this event doesn't exist" });
-    return;
+    return { message: "this event doesn't exist" };
   }
 
   const eventId = event.id;
@@ -438,8 +428,7 @@ const updateEvent = async (req, res) => {
     await event.save();
     return { event };
   } else {
-    res.json({ message: "No access!" });
-    return;
+    return { message: "No access!" };
   }
 };
 const webhook = async (req, res) => {
@@ -583,14 +572,12 @@ const after_buying_action = async (req, res) => {
       await newTicket.save();
     }
   }
-  res.json({ message: "Tickets were sent on your email" });
-  return;
+  return { message: "Tickets were sent on your email" };
 };
 const createComment = async (req, res) => {
   const { comment } = req.body;
   if (!comment) {
-    res.json({ message: "Comment can not be empty" });
-    return;
+    return { message: "Comment can not be empty" };
   }
   const newComment = new Comment({
     comment,
@@ -602,9 +589,10 @@ const createComment = async (req, res) => {
 };
 const getEventComments = async (req, res) => {
   const eventId = req.params.id;
-  console.log(eventId);
-  const comments = await Comment.find({ event: eventId });
-  console.log(comments);
+  const comments = await Comment.find({ event: eventId }).populate({
+    path: "author",
+    select: "username avatar",
+  });
   return comments;
 };
 const getEventCategory = async (req, res) => {

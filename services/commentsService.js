@@ -2,7 +2,10 @@ import Comment from "../models/Comment.js";
 import User from "../models/User.js";
 
 const byId = async (req) => {
-  const comment = await Comment.findById(req.params.id);
+  const comment = await Comment.findById(req.params.id).populate({
+    path: "author",
+    select: "username avatar",
+  });
   return comment;
 };
 const removeComment = async (req, res) => {
@@ -11,14 +14,11 @@ const removeComment = async (req, res) => {
   if (req.user._id.equals(comment_user.author)) {
     const comment = await Comment.findByIdAndDelete(req.params.id);
     if (!comment) {
-      res.json({ message: "That comment is not exist" });
-      return;
+      return { message: "That comment is not exist" };
     }
-    res.json({ message: "Comment was deleted" });
-    return;
+    return { message: "Comment was deleted" };
   } else {
-    res.json({ message: "That's not your comment" });
-    return;
+    return { message: "That's not your comment" };
   }
 };
 const UpdateComment = async (res, req) => {
@@ -33,8 +33,7 @@ const UpdateComment = async (res, req) => {
     await com.save();
     return { com };
   } else {
-    res.json({ message: "That's not your comment" });
-    return;
+    return { message: "That's not your comment" };
   }
 };
 

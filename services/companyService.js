@@ -66,11 +66,9 @@ const deleteCompany = async (req, res) => {
     for (let i = 0; i < events.length; i++) {
       await Event.findOneAndDelete({ author: events[i].author });
     }
-    res.json({ message: "Company was deleted" });
-    return;
+    return { message: "Company was deleted" };
   } else {
-    res.json({ message: "No access!" });
-    return;
+    return { message: "No access!" };
   }
 };
 // если компания изменила данные о себе - оповестить
@@ -122,10 +120,9 @@ const updateCompany = async (req, res) => {
         /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
       if (!email.match(validRegex)) {
-        res.json({
+        return {
           message: "Email isn't valid",
-        });
-        return;
+        };
       }
       company.email = email;
       company.verified = false;
@@ -154,8 +151,7 @@ const updateCompany = async (req, res) => {
     await company.save();
     return { company };
   } else {
-    res.json({ message: "No access!" });
-    return;
+    return { message: "No access!" };
   }
 };
 const getCompanyEvents = async (req, res) => {
@@ -179,18 +175,16 @@ const createMyCompany = async (req, res) => {
     req.body;
 
   if (!location || !company_name || !email) {
-    res.json({ message: "Content can not be empty" });
-    return;
+    return { message: "Content can not be empty" };
   }
 
   var validRegex =
     /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
   if (!email.match(validRegex)) {
-    res.json({
+    return {
       message: "Email isn't valid",
-    });
-    return;
+    };
   }
 
   const newCompany = new Company({
@@ -259,15 +253,13 @@ const updatePromo = async (req, res) => {
     });
     await newPromo.save();
 
-    res.json({
+    return {
       message: "Promo was creates",
-    });
-    return;
+    };
   } else {
-    res.json({
+    return {
       message: "Your promo is still alive",
-    });
-    return;
+    };
   }
 };
 const giveSubPromo = async (req, res) => {
@@ -288,8 +280,7 @@ const giveSubPromo = async (req, res) => {
   const promocode = await Promocode.findOne({ company: req.params.id });
 
   if (!promocode) {
-    res.json({ message: "Firstly create a new promo" });
-    return;
+    return { message: "Firstly create a new promo" };
   }
 
   // Для каждого пользователя добавляем промокод, если его нет в массиве промокодов пользователя
@@ -310,20 +301,18 @@ const giveSubPromo = async (req, res) => {
       });
     }
   }
-  res.json({
+  return {
     message: "Promo was sent",
-  });
-  return;
+  };
 };
 const inviteMembers = async (req, res) => {
   const { email } = req.body;
 
   const new_member = await User.findOne({ email: email });
   if (!new_member) {
-    res.json({
+    return {
       message: "Sorry, user not founded!",
-    });
-    return;
+    };
   }
 
   const company = await Company.findById(req.params.id);
@@ -337,33 +326,29 @@ const inviteMembers = async (req, res) => {
     html: `<h1>${url}</h1>`,
   });
   ////////////////////////////////////////
-  res.json({
+  return {
     message: "An Email was sent",
-  });
-  return;
+  };
 };
 const addNewMember = async (req, res) => {
   const user = await User.findById(req.user.id);
   if (user.companies.includes(req.params.id)) {
-    res.json({
+    return {
       message: "You are already a member of this company.",
-    });
-    return;
+    };
   }
   user.companies.push(req.params.id);
   await user.save();
-  res.json({
+  return {
     message: "You are member now!",
-  });
-  return;
+  };
 };
 const loadPictures = async (req, res) => {
   const company = await Company.findById(req.params.id);
 
   console.log(company.admin.toString(), req.user.id.toString());
   if (company.admin.toString() !== req.user.id.toString()) {
-    res.json({ message: "No access!" });
-    return;
+    return { message: "No access!" };
   }
 
   let fileName = "";
@@ -397,30 +382,26 @@ const verifyEmail = async (req, res) => {
       console.log(decoded);
       req.decoded = decoded.email;
       if (err) {
-        res.json({ message: "Forbidden" });
-        return;
+        return { message: "Forbidden" };
       }
     })
   );
   const company = await Company.findOne({ email: req.decoded });
 
   if (!company) {
-    res.json({ message: "Sorry, user not found!" });
-    return;
+    return { message: "Sorry, user not found!" };
   }
 
   if (company.verified) {
-    res.json({
+    return {
       message: "This account is already verified!",
-    });
-    return;
+    };
   }
 
   company.verified = true;
   await company.save();
 
-  res.json({ message: "Your email is verified" });
-  return;
+  return { message: "Your email is verified" };
 };
 
 export default {
