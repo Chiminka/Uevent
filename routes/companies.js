@@ -12,7 +12,7 @@ router.post("/", verifyJWT, companiesController.createMyCompany);
 
 // Get company by id +
 // http://localhost:3002/api/companies/:id
-router.get("/:id", verifyJWT, companiesController.getCompanyById);
+router.get("/:id", companiesController.getCompanyById);
 
 //Show all company's events, limit in 5 +
 // http://localhost:3002/api/companies/:id/events/:page
