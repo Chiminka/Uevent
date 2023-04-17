@@ -325,7 +325,7 @@ const inviteMembers = async (req, res) => {
 
   const v_token = jwt.sign(
     {
-      id_user: new_member.id,
+      id_user: new_member._id,
       id_company: req.params.id,
     },
     process.env.JWT_SECRET,
