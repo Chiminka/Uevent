@@ -6,7 +6,7 @@ import mailTransport from "../utils/mailTransport.js";
 import { check_promocode } from "./check_promocode.js";
 
 export const post_it_now = async () => {
-  schedule.scheduleJob("*/1 * * * 0-6", async () => {
+  schedule.scheduleJob("*/2 * * * * *", async () => {
     const events = await Event.find({ visible: "yes" }).populate("author");
 
     const date = new Date();
